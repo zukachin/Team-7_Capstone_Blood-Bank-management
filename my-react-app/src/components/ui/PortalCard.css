@@ -1,0 +1,42 @@
+.portal-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.portal-card-title {
+  font-size: var(--font-xl);
+  font-weight: var(--font-semibold);
+  color: var(--color-white);
+}
+
+.portal-card-description {
+  color: var(--color-gray-400);
+  font-size: var(--font-sm);
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.portal-card-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding-top: var(--spacing-md);
+}
+
+.portal-card-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.portal-card-stat-value {
+  font-size: var(--font-2xl);
+  font-weight: var(--font-bold);
+  color: var(--color-white);
+}
+
+.portal-card-stat-label {
+  color: var(--color-gray-400);
+  font-size: var(--font-sm);
+}

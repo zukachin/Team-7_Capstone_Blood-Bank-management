@@ -1,0 +1,32 @@
+.layout {
+  min-height: 100vh;
+  background-color: var(--color-black);
+  color: var(--color-white);
+  font-family: 'Inter', sans-serif;
+  position: relative;
+}
+
+.layout-main {
+  min-height: calc(100vh - 80px);
+}
+
+/* Decorative Elements */
+.decorative-line-vertical {
+  position: fixed;
+  top: 33%;
+  right: 0;
+  width: 4px;
+  height: 160px;
+  background-color: var(--color-red-primary);
+  opacity: 0.5;
+}
+
+.decorative-line-horizontal {
+  position: fixed;
+  bottom: 33%;
+  right: 2rem;
+  width: 64px;
+  height: 4px;
+  background-color: var(--color-red-primary);
+  opacity: 0.5;
+}

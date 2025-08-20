@@ -1,0 +1,5 @@
+# Node modules (donor + inventory services)
+**/node_modules
+
+# Environment files
+**/.env

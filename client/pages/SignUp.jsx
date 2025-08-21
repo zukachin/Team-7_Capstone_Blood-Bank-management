@@ -32,21 +32,7 @@ const SignUpPage = () => {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Navigation */}
-      <nav className="flex items-center justify-between p-6">
-        <div className="flex items-center space-x-2">
-          <div className="w-1 h-8 bg-red-600"></div>
-          <span className="text-red-600 text-xl font-bold">LIFE LINK</span>
-        </div>
-        <div className="flex space-x-8">
-          <Link to="/" className="text-red-500 hover:text-red-400 transition-colors">Home</Link>
-          <Link to="/looking-for-blood" className="hover:text-red-400 transition-colors">Looking for Blood</Link>
-          <Link to="/want-to-donate" className="hover:text-red-400 transition-colors">Want to donate Blood</Link>
-          <Link to="/dashboard" className="hover:text-red-400 transition-colors">Blood Bank Dashboard</Link>
-        </div>
-      </nav>
-
-      <div className="flex items-start justify-center min-h-[calc(100vh-80px)] px-6 py-12">
+      <div className="flex items-start justify-center min-h-screen px-6 py-12">
         <div className="w-full max-w-6xl">
           <h1 className="text-5xl font-bold mb-12 text-center">Sign Up</h1>
           

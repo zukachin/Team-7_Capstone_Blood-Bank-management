@@ -1,42 +1,92 @@
-import React from 'react';
+import React from "react";
+import { useNavigate, Link } from "react-router-dom"; // ✅ added Link
 
 const DonorPortalPage = () => {
+  const navigate = useNavigate(); // ✅ create navigate instance
+
   const handleNavigation = (path) => {
-    console.log(`Navigate to: ${path}`);
-    // Handle navigation here
+    navigate(path); // ✅ navigate to page
   };
 
   const handleBackToHome = () => {
-    console.log('Navigate back to home');
-    // Handle back navigation here
+    navigate("/"); // ✅ go to home
   };
 
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Navigation */}
-      <nav className="flex items-center justify-between p-6">
-        <div className="flex items-center space-x-2">
-          <div className="w-1 h-8 bg-red-600"></div>
-          <span className="text-red-600 text-xl font-bold">LIFE LINK</span>
-        </div>
-        <div className="flex space-x-8">
-          <a href="#" onClick={() => handleNavigation('/')} className="text-red-500 hover:text-red-400 transition-colors">Home</a>
-          <a href="#" onClick={() => handleNavigation('/looking-for-blood')} className="hover:text-red-400 transition-colors">Looking for Blood</a>
-          <a href="#" onClick={() => handleNavigation('/want-to-donate')} className="hover:text-red-400 transition-colors">Want to donate Blood</a>
-          <a href="#" onClick={() => handleNavigation('/dashboard')} className="hover:text-red-400 transition-colors">Blood Bank Dashboard</a>
-        </div>
-      </nav>
+      <header className="w-full bg-black border-b border-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-20">
+            {/* Logo */}
+            <div className="flex items-center space-x-2">
+              {/* Red arrow icon */}
+              <svg
+                width="10"
+                height="58"
+                viewBox="0 0 10 58"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-12 w-2"
+              >
+                <path d="M0 14.5L10 0V43L0 57.5V14.5Z" fill="#FF0000" />
+              </svg>
+              <Link
+                to="/"
+                className="text-blood-primary font-bold text-2xl"
+                style={{
+                  fontFamily:
+                    "Instrument Sans, -apple-system, Roboto, Helvetica, sans-serif",
+                }}
+              >
+                LIFE LINK
+              </Link>
+            </div>
 
+            {/* Navigation buttons */}
+            <div className="flex space-x-9">
+              <button
+                onClick={() => handleNavigation("/")}
+                className="text-red-500 hover:text-red-400 text-xl transition-colors"
+              >
+                Home
+              </button>
+              <button
+                onClick={() => handleNavigation("/looking-for-blood")}
+                className="hover:text-red-400 text-xl transition-colors"
+              >
+                Looking for Blood
+              </button>
+              <button
+                onClick={() => handleNavigation("/want-to-donate")}
+                className="hover:text-red-400 text-xl transition-colors"
+              >
+                Want to donate Blood
+              </button>
+              <button
+                onClick={() => handleNavigation("/dashboard")}
+                className="hover:text-red-400 text-xl transition-colors"
+              >
+                Blood Bank Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-160px)] px-6">
         {/* Title */}
-        <h1 className="text-5xl font-bold mb-16 text-center tracking-wide">DONOR PORTAL</h1>
-        
+        <h1 className="text-5xl font-bold mb-16 text-center tracking-wide">
+          DONOR PORTAL
+        </h1>
+
         {/* Cards Container */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-4xl w-full mb-16">
           {/* Register as Donor Card */}
-          <div 
+          <div
             className="bg-gray-900 rounded-lg p-8 hover:bg-gray-800 transition-colors cursor-pointer group"
-            onClick={() => handleNavigation('/signup')}
+            onClick={() => handleNavigation("/register-donor")}
           >
             <div className="text-center">
               <h2 className="text-red-500 text-2xl font-bold mb-4 group-hover:text-red-400 transition-colors">
@@ -49,9 +99,9 @@ const DonorPortalPage = () => {
           </div>
 
           {/* My Appointments Card */}
-          <div 
+          <div
             className="bg-gray-900 rounded-lg p-8 hover:bg-gray-800 transition-colors cursor-pointer group"
-            onClick={() => handleNavigation('/my-appointments')}
+            onClick={() => handleNavigation("/my-appointments")}
           >
             <div className="text-center">
               <h2 className="text-red-500 text-2xl font-bold mb-4 group-hover:text-red-400 transition-colors">
@@ -64,9 +114,9 @@ const DonorPortalPage = () => {
           </div>
 
           {/* Book Appointments Card */}
-          <div 
+          <div
             className="bg-gray-900 rounded-lg p-8 hover:bg-gray-800 transition-colors cursor-pointer group md:col-span-2 lg:col-span-1 mx-auto md:mx-0"
-            onClick={() => handleNavigation('/book-appointments')}
+            onClick={() => handleNavigation("/book-appointments")}
           >
             <div className="text-center">
               <h2 className="text-red-500 text-2xl font-bold mb-4 group-hover:text-red-400 transition-colors">

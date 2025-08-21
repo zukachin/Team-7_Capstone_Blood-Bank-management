@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; 
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
@@ -24,12 +25,19 @@ const LoginPage = () => {
     // On success, navigate to dashboard or home
   };
 
+  
+
   const handleForgotPassword = () => {
-    console.log('Navigate to forgot password page');
     // Navigate to forgot password page
+    navigate('/forgot-password');
+    console.log('Navigate to forgot password page');
+  
   };
 
+  const navigate = useNavigate();
+
   const handleBackToHome = () => {
+    navigate('/'); 
     console.log('Navigate back to home');
   };
 

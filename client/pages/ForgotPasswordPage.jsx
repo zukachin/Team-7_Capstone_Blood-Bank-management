@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; 
+
+
+
 
 const ForgotPasswordPage = () => {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1); // 1 = forget step, 2 = reset step
   const [formData, setFormData] = useState({
     email: '',
@@ -38,10 +43,12 @@ const ForgotPasswordPage = () => {
   };
 
   const handleBackToLogin = () => {
+    navigate('/login');
     console.log('Navigate back to login page');
   };
 
   const handleBackToHome = () => {
+    navigate('/');
     console.log('Navigate back to home');
   };
 

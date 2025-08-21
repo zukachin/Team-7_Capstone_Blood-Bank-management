@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; 
 
 const RegistrationPage = () => {
   const [formData, setFormData] = useState({
@@ -15,7 +16,7 @@ const RegistrationPage = () => {
 
   const [otpSent, setOtpSent] = useState(false);
   const [isOtpVerified, setIsOtpVerified] = useState(false);
-
+  const navigate = useNavigate();
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -50,6 +51,7 @@ const RegistrationPage = () => {
   };
 
   const handleBackToHome = () => {
+    navigate('/'); 
     console.log('Navigate back to home');
   };
 

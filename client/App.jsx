@@ -10,6 +10,7 @@ import LookingForBlood from "./pages/LookingForBlood";
 import WantToDonate from "./pages/WantToDonate";
 import Dashboard from "./pages/Dashboard";
 import SignUp from "./pages/SignUp";
+import RegisterDonor from "./pages/RegisterDonor";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ export default function App() {
             <Route path="/want-to-donate" element={<WantToDonate />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/signUp" element={<SignUp />} />
+            <Route path="/register-donor" element={<RegisterDonor />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

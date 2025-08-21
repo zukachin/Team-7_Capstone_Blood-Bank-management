@@ -76,8 +76,8 @@ export function Header() {
             </Link>
           </nav>
 
-          {/* Sign Up Button */}
-          <Button
+          <Link to="/signup">
+            <Button
               variant="outline"
               className="bg-black border-gray-600 hover:bg-gray-900 rounded-full px-6 py-2"
               style={{
@@ -87,6 +87,7 @@ export function Header() {
             >
               SIGN UP
             </Button>
+          </Link>
 
 
           {/* Mobile menu button */}
@@ -149,6 +150,16 @@ export function Header() {
               }}
             >
               Blood Bank Dashboard
+            </Link>
+            {/* Add this to your mobile navigation section */}
+            <Link
+              to="/signup"
+              className="text-blood-light font-normal text-base hover:text-white transition-colors py-2"
+              style={{
+                fontFamily: "Lora, -apple-system, Roboto, Helvetica, sans-serif",
+              }}
+            >
+              Sign Up
             </Link>
           </div>
         </nav>

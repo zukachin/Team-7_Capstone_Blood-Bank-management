@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound";
 import LookingForBlood from "./pages/LookingForBlood";
 import WantToDonate from "./pages/WantToDonate";
 import Dashboard from "./pages/Dashboard";
+import SignUp from "./pages/SignUp";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ export default function App() {
             <Route path="/looking-for-blood" element={<LookingForBlood />} />
             <Route path="/want-to-donate" element={<WantToDonate />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/signUp" element={<SignUp />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

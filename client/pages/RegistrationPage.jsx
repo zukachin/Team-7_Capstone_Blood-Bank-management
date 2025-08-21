@@ -57,57 +57,56 @@ const RegistrationPage = () => {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="flex items-start justify-center min-h-screen px-6 py-12">
+      <div className="flex flex-col items-center justify-center min-h-screen px-4 sm:px-6 py-8 sm:py-12">
         <div className="w-full max-w-4xl">
-          <h1 className="text-5xl font-bold mb-12 text-center">Registration</h1>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-6 max-w-4xl mx-auto">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-8 sm:mb-12 text-center">Registration</h1>
+          <div className="grid grid-cols-1 gap-y-8 md:grid-cols-2 md:gap-x-12 md:gap-y-6 max-w-4xl mx-auto">
             {/* Left Column */}
             <div className="space-y-6">
               <div>
-                <label className="block text-white text-lg mb-2">Full Name:</label>
+                <label className="block text-white text-base sm:text-lg mb-2">Full Name:</label>
                 <input
                   type="text"
                   name="fullName"
                   value={formData.fullName}
                   onChange={handleInputChange}
-                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors"
+                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors text-base sm:text-lg"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-white text-lg mb-2">Email:</label>
+                <label className="block text-white text-base sm:text-lg mb-2">Email:</label>
                 <input
                   type="email"
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors"
+                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors text-base sm:text-lg"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-white text-lg mb-2">Phone:</label>
+                <label className="block text-white text-base sm:text-lg mb-2">Phone:</label>
                 <input
                   type="tel"
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors"
+                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors text-base sm:text-lg"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-white text-lg mb-2">Address:</label>
+                <label className="block text-white text-base sm:text-lg mb-2">Address:</label>
                 <input
                   type="text"
                   name="address"
                   value={formData.address}
                   onChange={handleInputChange}
-                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors"
+                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors text-base sm:text-lg"
                   required
                 />
               </div>
@@ -116,49 +115,49 @@ const RegistrationPage = () => {
             {/* Right Column */}
             <div className="space-y-6">
               <div>
-                <label className="block text-white text-lg mb-2">District/City:</label>
+                <label className="block text-white text-base sm:text-lg mb-2">District/City:</label>
                 <input
                   type="text"
                   name="district"
                   value={formData.district}
                   onChange={handleInputChange}
-                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors"
+                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors text-base sm:text-lg"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-white text-lg mb-2">State:</label>
+                <label className="block text-white text-base sm:text-lg mb-2">State:</label>
                 <input
                   type="text"
                   name="state"
                   value={formData.state}
                   onChange={handleInputChange}
-                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors"
+                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors text-base sm:text-lg"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-white text-lg mb-2">Pincode:</label>
+                <label className="block text-white text-base sm:text-lg mb-2">Pincode:</label>
                 <input
                   type="text"
                   name="pincode"
                   value={formData.pincode}
                   onChange={handleInputChange}
-                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors"
+                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors text-base sm:text-lg"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-white text-lg mb-2">Password:</label>
+                <label className="block text-white text-base sm:text-lg mb-2">Password:</label>
                 <input
                   type="password"
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors"
+                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors text-base sm:text-lg"
                   required
                 />
               </div>
@@ -166,19 +165,19 @@ const RegistrationPage = () => {
           </div>
 
           {/* OTP Section */}
-          <div className="mt-12 max-w-md mx-auto space-y-6">
+          <div className="mt-8 sm:mt-12 max-w-md mx-auto space-y-6">
             <div className="flex justify-center">
               {!otpSent ? (
                 <button
                   onClick={handleSendOTP}
-                  className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-200"
+                  className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 sm:py-3 sm:px-8 rounded-lg transition-colors duration-200"
                 >
                   Send OTP
                 </button>
               ) : (
                 <button
                   onClick={handleResendOTP}
-                  className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-200"
+                  className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 sm:py-3 sm:px-8 rounded-lg transition-colors duration-200"
                 >
                   Resend OTP
                 </button>
@@ -188,13 +187,13 @@ const RegistrationPage = () => {
             {otpSent && (
               <>
                 <div>
-                  <label className="block text-white text-lg mb-2 text-center">Enter OTP:</label>
+                  <label className="block text-white text-base sm:text-lg mb-2 text-center">Enter OTP:</label>
                   <input
                     type="text"
                     name="otp"
                     value={formData.otp}
                     onChange={handleInputChange}
-                    className="w-full bg-transparent border-b border-gray-600 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors text-center"
+                    className="w-full bg-transparent border-b border-gray-600 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors text-center text-base sm:text-lg"
                     placeholder="Enter 6-digit OTP"
                     maxLength="6"
                     required
@@ -204,7 +203,7 @@ const RegistrationPage = () => {
                 <div className="flex justify-center">
                   <button
                     onClick={handleVerifyAndRegister}
-                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-200"
+                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 sm:py-3 sm:px-8 rounded-lg transition-colors duration-200"
                   >
                     Verify & Register
                   </button>
@@ -214,10 +213,10 @@ const RegistrationPage = () => {
           </div>
 
           {/* Back to Home Button */}
-          <div className="flex justify-center mt-8">
+          <div className="flex justify-center mt-6 sm:mt-8">
             <button
               onClick={handleBackToHome}
-              className="text-white hover:text-red-400 transition-colors text-lg font-medium"
+              className="text-white hover:text-red-400 transition-colors text-base sm:text-lg font-medium"
             >
               Back to home
             </button>

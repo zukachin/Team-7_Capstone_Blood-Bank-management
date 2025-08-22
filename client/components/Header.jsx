@@ -54,7 +54,7 @@ export function Header() {
             >
               Looking for Blood
             </Link>
-            <Link
+            {/* <Link
               to="/want-to-donate"
               className="text-white font-normal text-base hover:text-blood-light transition-colors"
               style={{
@@ -64,6 +64,22 @@ export function Header() {
             >
               Want to donate Blood
             </Link>
+            <div className="absolute left-0 mt-2 hidden group-hover:block bg-black border border-gray-800 rounded-md shadow-lg z-50 min-w-[14rem]">
+              <Link to="/register-donor" className="block px-4 py-2 hover:bg-gray-900">Register as Donor</Link>
+              <Link to="/donation-camps" className="block px-4 py-2 hover:bg-gray-900">Blood Donation Camps</Link>
+            </div> */}
+            <div className="relative group">
+              <button
+                className="text-white font-normal text-base hover:text-blood-light transition-colors"
+                style={{ fontFamily: "Lora, -apple-system, Roboto, Helvetica, sans-serif" }}
+              >
+                Want to donate Blood
+              </button>
+              <div className="absolute left-0 mt-0 hidden group-hover:block bg-black border border-gray-800 rounded-md shadow-lg z-50 min-w-[14rem]">
+                <Link to="/register-donor" className="block px-4 py-2 hover:bg-gray-900">Register as Donor</Link>
+                <Link to="/donation-camps" className="block px-4 py-2 hover:bg-gray-900">Blood Donation Camps</Link>
+              </div>
+            </div>
             <Link
               to="/dashboard"
               className="text-white font-normal text-base hover:text-blood-light transition-colors"

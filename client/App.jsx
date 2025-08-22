@@ -15,6 +15,8 @@ import Login from "./pages/LoginPage";
 import ForgotPassword from "./pages/ForgotPasswordPage";
 import Registration from "./pages/RegistrationPage";
 import DonorPortalPage from "./pages/DonorPortalPage";
+import ManageProfilePage from "./pages/ManageProfile";
+
 
 const queryClient = new QueryClient();
 
@@ -36,6 +38,7 @@ export default function App() {
             <Route path="/register" element={<Registration />} />
             <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/manage-profile" element={<ManageProfilePage />} />
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

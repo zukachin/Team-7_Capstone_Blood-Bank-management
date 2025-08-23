@@ -44,7 +44,7 @@ export function Header() {
             >
               Home
             </Link>
-            <Link
+            {/* <Link
               to="/looking-for-blood"
               className="text-white font-normal text-base hover:text-blood-light transition-colors"
               style={{
@@ -53,7 +53,18 @@ export function Header() {
               }}
             >
               Looking for Blood
-            </Link>
+            </Link> */}
+            <div className="relative group">
+              <button
+                className="text-white font-normal text-base hover:text-blood-light transition-colors"
+                style={{ fontFamily: "Lora, -apple-system, Roboto, Helvetica, sans-serif" }}
+              >
+                Looking for Blood
+              </button>
+              <div className="absolute left-0 mt-0 hidden group-hover:block bg-black border border-gray-800 rounded-md shadow-lg z-50 min-w-[14rem]">
+                <Link to="/stock-availability" className="block px-4 py-2 hover:bg-gray-900">Blood Availability</Link>
+              </div>
+            </div>
             {/* <Link
               to="/want-to-donate"
               className="text-white font-normal text-base hover:text-blood-light transition-colors"

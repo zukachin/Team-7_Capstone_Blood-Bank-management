@@ -1,186 +1,194 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { api } from "../lib/api";
 
-const SignUpPage = () => {
+export default function SignUp() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    fullName: '',
-    emailId: '',
-    phoneNumber: '',
-    address: '',
-    location: '',
-    gender: '',
-    age: '',
-    bloodGroup: '',
-    dateOfBirth: ''
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    street: "",
+    city: "",
+    state: "",
+    pincode: "",
+    password: "",
   });
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = () => {
-    console.log('Form submitted:', formData);
-    // Handle form submission here
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    setErr("");
+    setLoading(true);
+    try {
+      const { userId } = await api.register({
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        street: form.street,
+        city: form.city,
+        state: form.state,
+        pincode: form.pincode,
+        password: form.password,
+      });
+      navigate(`/verify-otp?userId=${encodeURIComponent(userId)}&email=${encodeURIComponent(form.email)}`);
+    } catch (error) {
+      setErr(error.message || "Failed to register");
+    } finally {
+      setLoading(false);
+    }
   };
-
-  const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
   return (
     <div className="min-h-screen bg-black text-white">
       <div className="flex flex-col items-center justify-center min-h-screen px-4 sm:px-6 py-8 sm:py-12">
         <div className="w-full max-w-4xl">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-8 sm:mb-12 text-center">Sign Up</h1>
-          <div className="grid grid-cols-1 gap-y-8 md:grid-cols-2 md:gap-x-12 md:gap-y-6 max-w-4xl mx-auto">
-            {/* Left Column */}
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-8 sm:mb-12 text-center">
+            Create Your Account
+          </h1>
+
+          <form
+            onSubmit={onSubmit}
+            className="grid grid-cols-1 gap-y-8 md:grid-cols-2 md:gap-x-12 md:gap-y-6 bg-gray-900/40 border border-gray-800 rounded-2xl p-6"
+          >
+            {err && <div className="text-red-400 text-sm col-span-2">{err}</div>}
+
+            {/* Left column */}
             <div className="space-y-6">
               <div>
-                <label className="block text-white text-base sm:text-lg mb-2">Full Name:</label>
+                <label className="block text-white mb-2">Full Name</label>
                 <input
-                  type="text"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors text-base sm:text-lg"
+                  name="name"
+                  value={form.name}
+                  onChange={onChange}
+                  placeholder="Enter full name"
+                  className="w-full bg-transparent border-b border-gray-600 py-2 focus:border-red-500 focus:outline-none"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-white text-base sm:text-lg mb-2">Email Id:</label>
+                <label className="block text-white mb-2">Email</label>
                 <input
                   type="email"
-                  name="emailId"
-                  value={formData.emailId}
-                  onChange={handleInputChange}
-                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors text-base sm:text-lg"
+                  name="email"
+                  value={form.email}
+                  onChange={onChange}
+                  placeholder="Enter email"
+                  className="w-full bg-transparent border-b border-gray-600 py-2 focus:border-red-500 focus:outline-none"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-white text-base sm:text-lg mb-2">Phone Number:</label>
+                <label className="block text-white mb-2">Phone Number</label>
                 <input
-                  type="tel"
-                  name="phoneNumber"
-                  value={formData.phoneNumber}
-                  onChange={handleInputChange}
-                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors text-base sm:text-lg"
+                  name="phone"
+                  value={form.phone}
+                  onChange={onChange}
+                  placeholder="Enter phone number"
+                  className="w-full bg-transparent border-b border-gray-600 py-2 focus:border-red-500 focus:outline-none"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-white text-base sm:text-lg mb-2">Address:</label>
+                <label className="block text-white mb-2">Street / Address</label>
                 <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors text-base sm:text-lg"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-white text-base sm:text-lg mb-2">Location:</label>
-                <input
-                  type="text"
-                  name="location"
-                  value={formData.location}
-                  onChange={handleInputChange}
-                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors text-base sm:text-lg"
+                  name="street"
+                  value={form.street}
+                  onChange={onChange}
+                  placeholder="Enter street"
+                  className="w-full bg-transparent border-b border-gray-600 py-2 focus:border-red-500 focus:outline-none"
                   required
                 />
               </div>
             </div>
 
-            {/* Right Column */}
+            {/* Right column */}
             <div className="space-y-6">
               <div>
-                <label className="block text-white text-base sm:text-lg mb-2">Gender:</label>
-                <select
-                  name="gender"
-                  value={formData.gender}
-                  onChange={handleInputChange}
-                  className="w-full bg-black border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none transition-colors text-base sm:text-lg"
-                  required
-                >
-                  <option value="">Select Gender</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-white text-base sm:text-lg mb-2">Age:</label>
+                <label className="block text-white mb-2">City</label>
                 <input
-                  type="number"
-                  name="age"
-                  value={formData.age}
-                  onChange={handleInputChange}
-                  min="18"
-                  max="65"
-                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors text-base sm:text-lg"
+                  name="city"
+                  value={form.city}
+                  onChange={onChange}
+                  placeholder="Enter city"
+                  className="w-full bg-transparent border-b border-gray-600 py-2 focus:border-red-500 focus:outline-none"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-white text-base sm:text-lg mb-2">Blood Group:</label>
-                <select
-                  name="bloodGroup"
-                  value={formData.bloodGroup}
-                  onChange={handleInputChange}
-                  className="w-full bg-black border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none transition-colors text-base sm:text-lg"
-                  required
-                >
-                  <option value="">Select Blood Group</option>
-                  {bloodGroups.map(group => (
-                    <option key={group} value={group}>{group}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-white text-base sm:text-lg mb-2">Date of Birth:</label>
+                <label className="block text-white mb-2">State</label>
                 <input
-                  type="date"
-                  name="dateOfBirth"
-                  value={formData.dateOfBirth}
-                  onChange={handleInputChange}
-                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none transition-colors text-base sm:text-lg"
+                  name="state"
+                  value={form.state}
+                  onChange={onChange}
+                  placeholder="Enter state"
+                  className="w-full bg-transparent border-b border-gray-600 py-2 focus:border-red-500 focus:outline-none"
                   required
                 />
               </div>
 
-              <div className="pt-4 sm:pt-6 space-y-3 sm:space-y-4">
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 sm:py-3 sm:px-6 rounded-lg transition-colors duration-200"
-                >
-                  Sign Up
-                </button>
-                <button
-                  type="button"
-                  className="w-full bg-transparent border border-gray-600 hover:border-red-500 text-white py-2 px-4 sm:py-3 sm:px-6 rounded-lg transition-colors duration-200"
-                  onClick={() => navigate('/')}
-                >
-                  Back to home
-                </button>
+              <div>
+                <label className="block text-white mb-2">Pincode</label>
+                <input
+                  name="pincode"
+                  value={form.pincode}
+                  onChange={onChange}
+                  placeholder="Enter pincode"
+                  className="w-full bg-transparent border-b border-gray-600 py-2 focus:border-red-500 focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-white mb-2">Password</label>
+                <input
+                  type="password"
+                  name="password"
+                  value={form.password}
+                  onChange={onChange}
+                  placeholder="Create password"
+                  className="w-full bg-transparent border-b border-gray-600 py-2 focus:border-red-500 focus:outline-none"
+                  required
+                />
               </div>
             </div>
-          </div>
+
+            {/* Actions */}
+            <div className="col-span-2 flex flex-col space-y-3 pt-4">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition-colors duration-200 disabled:opacity-60"
+              >
+                {loading ? "Sending OTP..." : "Register"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigate("/")}
+                className="w-full bg-transparent border border-gray-600 hover:border-red-500 text-white py-3 rounded-lg transition-colors duration-200"
+              >
+                Back to Home
+              </button>
+
+              <p className="text-sm text-gray-400 text-center">
+                Already have an account?{" "}
+                <a href="/login" className="text-red-400 hover:underline">
+                  Login
+                </a>
+              </p>
+            </div>
+          </form>
         </div>
       </div>
     </div>
   );
-};
-
-export default SignUpPage;
+}

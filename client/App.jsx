@@ -18,7 +18,9 @@ import DonorPortalPage from "./pages/DonorPortalPage";
 import ManageProfilePage from "./pages/ManageProfile";
 import DonationCamps from "./pages/DonationCamps";
 import BloodStockAvailability from "./pages/BloodStockAvailability";
-
+import VerifyOtp from "./pages/VerifyOtp";
+import ProtectedRoute from "./components/ProtectedRoute";
+import UserMenu from "./components/UserMenu";
 
 const queryClient = new QueryClient();
 
@@ -40,9 +42,15 @@ export default function App() {
             <Route path="/register" element={<Registration />} />
             <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/manage-profile" element={<ManageProfilePage />} />
+            <Route path="/manage-profile" element={
+                <ProtectedRoute>
+                  <ManageProfilePage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/donation-camps" element={<DonationCamps />} />
             <Route path="/stock-availability" element={<BloodStockAvailability />} />
+            <Route path="/verify-otp" element={<VerifyOtp />} />
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

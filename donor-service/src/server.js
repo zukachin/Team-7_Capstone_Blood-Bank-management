@@ -3,9 +3,11 @@ const express = require("express");
 const authRoutes = require("./routes/authRoutes.js");
 const profileRoutes = require("./routes/profileRoutes.js"); // <-- import profile routes
 const { pool } = require("./db/pool");
+const cors = require("cors");
 
 const app = express();
 app.use(express.json());
+app.use(cors({ origin: ["http://localhost:5173"], credentials: false }));
 
 // Auth routes
 app.use("/api/users", authRoutes);

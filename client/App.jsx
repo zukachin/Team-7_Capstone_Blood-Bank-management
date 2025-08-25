@@ -21,6 +21,7 @@ import BloodStockAvailability from "./pages/BloodStockAvailability";
 import VerifyOtp from "./pages/VerifyOtp";
 import ProtectedRoute from "./components/ProtectedRoute";
 import UserMenu from "./components/UserMenu";
+import BloodBankGamification from "./pages/DonorGame";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,8 @@ export default function App() {
             <Route path="/donation-camps" element={<DonationCamps />} />
             <Route path="/stock-availability" element={<BloodStockAvailability />} />
             <Route path="/verify-otp" element={<VerifyOtp />} />
+            <Route path="/blood-bank-gamification" element={<BloodBankGamification />} />
+
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

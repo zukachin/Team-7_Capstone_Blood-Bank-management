@@ -9,13 +9,34 @@ exports.register = async (req, res) => {
   const { name, email, phone, street, city, state, pincode, password } = req.body;
 
   try {
-    const userCheck = await pool.query("SELECT id FROM users WHERE email=$1", [email]);
-    if (userCheck.rows.length) {
+    // 🔎 Validate phone format (must be 10 digits)
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phoneRegex.test(phone)) {
+      return res.status(400).json({ message: "Invalid phone number. Must be 10 digits." });
+    }
+
+    // 🔎 Validate pincode format (must be 6 digits)
+    const pincodeRegex = /^[0-9]{6}$/;
+    if (!pincodeRegex.test(pincode)) {
+      return res.status(400).json({ message: "Invalid pincode. Must be 6 digits." });
+    }
+
+    // 🔎 Check if email already exists
+    const emailCheck = await pool.query("SELECT id FROM users WHERE email=$1", [email]);
+    if (emailCheck.rows.length) {
       return res.status(400).json({ message: "Email already exists" });
     }
 
+    // 🔎 Check if phone already exists
+    const phoneCheck = await pool.query("SELECT id FROM users WHERE phone=$1", [phone]);
+    if (phoneCheck.rows.length) {
+      return res.status(400).json({ message: "Phone number already exists" });
+    }
+
+    // 🔒 Hash password
     const password_hash = await bcrypt.hash(password, 10);
 
+    // ✅ Insert user
     const inserted = await pool.query(
       `INSERT INTO users(name,email,phone,street,city,state,pincode,password_hash,is_verified)
        VALUES($1,$2,$3,$4,$5,$6,$7,$8,false)
@@ -24,6 +45,8 @@ exports.register = async (req, res) => {
     );
 
     const userId = inserted.rows[0].id;
+
+    // 🔑 Generate OTP
     const otp = generateOtp();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
@@ -34,6 +57,7 @@ exports.register = async (req, res) => {
     );
 
     await sendOtpEmail(email, otp);
+
     res.json({ message: "OTP sent to email", userId });
   } catch (err) {
     console.error(err);

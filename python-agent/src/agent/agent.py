@@ -14,7 +14,7 @@ st.set_page_config(page_title="Blood Bank Chatbot", page_icon="🩸", layout="wi
 st.title("🩸 Blood Bank Conversational Agent")
 
 # --- Database connection (fixed, no sidebar UI) ---
-DB_URI = "postgresql+psycopg2://postgres:12345678@localhost:5432/dummy BBM data"
+DB_URI = "postgresql+psycopg2://postgres:12345678@localhost:5432/version 1"
 engine = create_engine(DB_URI)
 db = SQLDatabase(engine)
 

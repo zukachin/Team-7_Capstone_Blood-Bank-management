@@ -3,7 +3,14 @@ const pool = require("../db/db");
 const { donorSchema, donorUpdateSchema } = require("../validators/donorValidator");
 
 /**
+ * Helper to check if user is SuperAdmin
+ */
+const isSuperAdmin = (role) => role?.toUpperCase() === "SUPER_ADMIN";
+
+/**
  * POST /donor/donor-register
+ * - Admin: can register donors only in their own centre
+ * - SuperAdmin: can register donors in any centre
  */
 exports.registerDonor = async (req, res) => {
   try {
@@ -19,7 +26,7 @@ exports.registerDonor = async (req, res) => {
 
     // Decide centre_id (Admin cannot override; SuperAdmin may)
     let centre_id = tokenCentre;
-    if (role === "SuperAdmin" && value.centre_id) {
+    if (isSuperAdmin(role) && value.centre_id) {
       centre_id = value.centre_id;
     }
 
@@ -58,13 +65,13 @@ exports.registerDonor = async (req, res) => {
 
 /**
  * GET /donor  (list)
- * - Admin: only own centre (default)
- * - SuperAdmin: all (optionally filter by ?centre_id=A)
+ * - Admin: only own centre
+ * - SuperAdmin: all centres or filter by ?centre_id=X
  */
 exports.getAllDonors = async (req, res) => {
   try {
-    const { role, centreId } = req.user;
-    const { centre_id } = req.query;
+    const { role, centreId } = req.user; // from JWT
+    const { centre_id } = req.query;      // optional filter for SuperAdmin
 
     let sql = `
       SELECT donor_id, first_name, last_name, mobile_no, blood_group_id, centre_id, camp_id, created_at
@@ -72,12 +79,14 @@ exports.getAllDonors = async (req, res) => {
     `;
     const params = [];
 
-    if (role === "SuperAdmin") {
+    if (isSuperAdmin(role)) {
       if (centre_id) {
-        sql += ` WHERE centre_id = $1`;
-        params.push(centre_id.toUpperCase());
+        sql += ` WHERE centre_id ILIKE $1`;
+        params.push(centre_id);
       }
+      // Else: SuperAdmin fetches all donors, no WHERE needed
     } else {
+      // Admins only see their own centre
       sql += ` WHERE centre_id = $1`;
       params.push(centreId);
     }
@@ -94,7 +103,8 @@ exports.getAllDonors = async (req, res) => {
 
 /**
  * GET /donor/search
- * - Admin: default own centre; can view other centres by passing ?centre_id=X
+ * Search donors by multiple filters
+ * - Admin: default own centre
  * - SuperAdmin: any centre
  */
 exports.searchDonors = async (req, res) => {
@@ -116,19 +126,16 @@ exports.searchDonors = async (req, res) => {
     if (camp_id) { conditions.push(`camp_id = $${i}`); values.push(parseInt(camp_id, 10)); i++; }
 
     // Centre scoping
-    if (role === "SuperAdmin") {
+    if (isSuperAdmin(role)) {
       if (centre_id) { conditions.push(`centre_id = $${i}`); values.push(centre_id.toUpperCase()); i++; }
+      // else SuperAdmin sees all centres
     } else {
-      // Admin: default own centre; allow override if centre_id provided (view-only)
-      if (centre_id) {
-        conditions.push(`centre_id = $${i}`); values.push(centre_id.toUpperCase()); i++;
-      } else {
-        conditions.push(`centre_id = $${i}`); values.push(centreId); i++;
-      }
+      if (centre_id) { conditions.push(`centre_id = $${i}`); values.push(centre_id.toUpperCase()); i++; }
+      else { conditions.push(`centre_id = $${i}`); values.push(centreId); i++; }
     }
 
     const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
-    const off = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+    const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
     const lim = parseInt(limit, 10);
 
     const sql = `
@@ -136,7 +143,7 @@ exports.searchDonors = async (req, res) => {
       FROM donors
       ${where}
       ORDER BY created_at DESC
-      LIMIT ${lim} OFFSET ${off}
+      LIMIT ${lim} OFFSET ${offset}
     `;
 
     const result = await pool.query(sql, values);
@@ -149,7 +156,7 @@ exports.searchDonors = async (req, res) => {
 
 /**
  * GET /donor/camp/:camp_id
- * - Admin: default own centre; can view other centres with ?centre_id=X
+ * - Admin: default own centre
  * - SuperAdmin: any centre
  */
 exports.getDonorsByCamp = async (req, res) => {
@@ -167,7 +174,7 @@ exports.getDonorsByCamp = async (req, res) => {
     `;
     const params = [camp_id];
 
-    if (role === "SuperAdmin") {
+    if (isSuperAdmin(role)) {
       if (centre_id) { sql += ` AND centre_id = $2`; params.push(centre_id.toUpperCase()); }
     } else {
       if (centre_id) { sql += ` AND centre_id = $2`; params.push(centre_id.toUpperCase()); }
@@ -186,7 +193,7 @@ exports.getDonorsByCamp = async (req, res) => {
 
 /**
  * GET /donor/:id
- * - Admin & SuperAdmin can VIEW any donor
+ * - Admin & SuperAdmin can view any donor
  */
 exports.getDonorById = async (req, res) => {
   try {
@@ -205,9 +212,8 @@ exports.getDonorById = async (req, res) => {
 
 /**
  * PATCH /donor/:id
- * - Admin: can only edit donors in their own centre
- * - SuperAdmin: can edit any donor
- * - centre_id can be updated ONLY by SuperAdmin
+ * - Admin: can only edit donors in own centre
+ * - SuperAdmin: can edit any donor, including centre_id
  */
 exports.updateDonor = async (req, res) => {
   try {
@@ -230,12 +236,12 @@ exports.updateDonor = async (req, res) => {
     const { role, centreId } = req.user;
 
     // Admin cannot update other centres
-    if (role !== "SuperAdmin" && donor.centre_id !== centreId) {
+    if (!isSuperAdmin(role) && donor.centre_id !== centreId) {
       return res.status(403).json({ msg: "Access denied: cannot edit other centres" });
     }
 
-    // Only SuperAdmin can change centre_id; strip it for Admin
-    if (role !== "SuperAdmin" && "centre_id" in value) {
+    // Admin cannot update centre_id
+    if (!isSuperAdmin(role) && "centre_id" in value) {
       delete value.centre_id;
     }
 

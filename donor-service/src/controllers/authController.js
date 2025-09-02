@@ -92,26 +92,84 @@ exports.verifyOtp = async (req, res) => {
   }
 };
 
-exports.login = async (req, res) => {
-  const { email, password } = req.body;
+// exports.login = async (req, res) => {
+//   const { email, password } = req.body;
+//   console.log("Login attempt:", req.body);
 
+//   try {
+//     const userRes = await pool.query(`SELECT * FROM users WHERE email=$1`, [email]);
+//     if (!userRes.rows.length) {
+//       return res.status(400).json({ message: "Invalid credentials" });
+//     }
+
+//     const user = userRes.rows[0];
+//     if (!user.is_verified) {
+//       return res.status(403).json({ message: "Email not verified" });
+//     }
+
+//     const match = await bcrypt.compare(password, user.password_hash);
+//     if (!match) {
+//       return res.status(400).json({ message: "Invalid credentials" });
+//     }
+
+//     // ✅ Generate JWT
+//     const token = jwt.sign(
+//       { userId: user.id, email: user.email },
+//       process.env.JWT_SECRET,
+//       { expiresIn: process.env.JWT_EXPIRES_IN || "1h" }
+//     );
+
+//     res.json({
+//       message: "Login successful",
+//       token, // send token to frontend
+//     });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+exports.login = async (req, res) => {
   try {
+    if (!req.body) {
+      return res.status(400).json({ message: "No request body received" });
+    }
+
+    const { email, password } = req.body;
+    console.log("👉 Login attempt:", email);
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password required" });
+    }
+
     const userRes = await pool.query(`SELECT * FROM users WHERE email=$1`, [email]);
     if (!userRes.rows.length) {
+      console.log("❌ User not found");
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
     const user = userRes.rows[0];
     if (!user.is_verified) {
+      console.log("❌ Email not verified");
       return res.status(403).json({ message: "Email not verified" });
+    }
+
+    if (!user.password_hash) {
+      console.log("❌ No password hash found for user:", email);
+      return res.status(500).json({ message: "Password not set for user" });
     }
 
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) {
+      console.log("❌ Wrong password for user:", email);
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // ✅ Generate JWT
+    if (!process.env.JWT_SECRET) {
+      console.error("❌ JWT_SECRET not set in env");
+      return res.status(500).json({ message: "Server misconfiguration" });
+    }
+
     const token = jwt.sign(
       { userId: user.id, email: user.email },
       process.env.JWT_SECRET,
@@ -120,13 +178,14 @@ exports.login = async (req, res) => {
 
     res.json({
       message: "Login successful",
-      token, // send token to frontend
+      token,
     });
   } catch (err) {
-    console.error(err);
+    console.error("❌ Login error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 exports.resendOtp = async (req, res) => {
   const { userId } = req.body;
 

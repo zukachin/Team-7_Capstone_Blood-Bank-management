@@ -1,8 +1,8 @@
 // client/lib/api.js
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4001/api";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4001";
 
 async function post(path, data, extraHeaders = {}) {
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(`${BASE_URL}/api${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...extraHeaders },
     body: JSON.stringify(data),

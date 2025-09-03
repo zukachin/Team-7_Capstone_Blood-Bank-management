@@ -5,7 +5,7 @@ const path = require("path");
 
 const authRoutes = require("./routes/authRoutes");
 const donorRoutes = require("./routes/donorRoutes");
-// const counselingRoutes = require("./routes/counselingRoutes");
+const counselingRoutes = require("./routes/counselingRoutes");
 
 const swaggerUi = require("swagger-ui-express");
 const swaggerJsdoc = require("swagger-jsdoc");
@@ -50,7 +50,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 // Routes
 app.use("/auth", authRoutes);
 app.use("/donor", donorRoutes);
-// app.use("/counseling", counselingRoutes);
+app.use("/counseling", counselingRoutes);
 
 app.get("/", (req, res) => res.send("Blood Bank API Running"));
 

@@ -2,86 +2,148 @@
 const { pool } = require("../db/pool");
 
 // GET /profile
+// exports.getProfile = async (req, res) => {
+//   try {
+//     const userId = req.user.id; // from JWT middleware
+//     const result = await pool.query(
+//       `SELECT id, email, first_name, last_name, phone, address, city, state, pincode, blood_group_id, district_id, gender 
+//        FROM users WHERE id=$1`,
+//       [userId]
+//     );
+
+//     if (!result.rows.length) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
+
+//     res.json(result.rows[0]);
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+
+//option-2
 exports.getProfile = async (req, res) => {
   try {
-  // Correct way to get logged-in user ID
+    // Extract correct field
     const userId = req.user.userId;
 
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized: No user in token" });
+    }
 
-    // Get user profile
-    const userRes = await pool.query(
-      `SELECT u.id, u.first_name, u.last_name, u.email, u.phone, u.address,
-              u.city, u.state, u.pincode, u.gender,
-              bg.id AS blood_group_id, bg.group_name AS blood_group,
-              d.id AS district_id, d.district_name AS district
-       FROM users u
-       LEFT JOIN blood_groups bg ON u.blood_group_id = bg.id
-       LEFT JOIN districts d ON u.district_id = d.id
-       WHERE u.id = $1`,
+    const result = await pool.query(
+      "SELECT id, name, email, is_verified FROM users WHERE id=$1",
       [userId]
     );
 
-    if (!userRes.rows.length) return res.status(404).json({ message: "User not found" });
+    if (!result.rows.length) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-    // Get dropdown options
-    const bloodGroupsRes = await pool.query(`SELECT id, group_name FROM blood_groups`);
-    const districtsRes = await pool.query(`SELECT id, district_name FROM districts`);
-
-    res.json({
-      profile: userRes.rows[0],
-      options: {
-        bloodGroups: bloodGroupsRes.rows,
-        districts: districtsRes.rows,
-        genders: ["Male", "Female", "Other"]
-      }
-    });
+    res.json(result.rows[0]);
   } catch (err) {
-    console.error(err);
+    console.error("👉 Profile error:", err.message);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 // PATCH /profile
-exports.updateProfile = async (req, res) => {
-  const userId = req.user.userId;
-  const {
-    first_name,
-    last_name,
-    phone,
-    address,
-    district_id,
-    city,
-    state,
-    pincode,
-    blood_group_id,
-    gender
-  } = req.body;
+// exports.updateProfile = async (req, res) => {
+//   try {
+//     const userId = req.user.id;
+//     const {
+//       first_name,
+//       last_name,
+//       phone,
+//       street,
+//       city,
+//       state,
+//       pincode,
+//       blood_group_id,
+//       district_id,
+//       gender,
+//     } = req.body;
 
+//     const result = await pool.query(
+//       `UPDATE users
+//        SET name=$1, phone=$2, street=$3, city=$4, state=$5, pincode=$6,
+//            blood_group_id=$7, district_id=$8, gender=$9
+//        WHERE id=$10
+//        RETURNING id`,
+//       [
+//         `${first_name} ${last_name}`,
+//         phone,
+//         street,
+//         city,
+//         state,
+//         pincode,
+//         blood_group_id,
+//         district_id,
+//         gender,
+//         userId,
+//       ]
+//     );
+
+//     if (!result.rows.length) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
+
+//     res.json({ message: "Profile updated successfully" });
+//   } catch (err) {
+//     console.error("Update profile error:", err);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+exports.updateProfile = async (req, res) => {
   try {
+    const userId = req.user.userId;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized: No user in token" });
+    }
+
+    const { name } = req.body;
+
     const result = await pool.query(
-      `UPDATE users
-       SET
-         first_name = COALESCE($1, first_name),
-         last_name = COALESCE($2, last_name),
-         phone = COALESCE($3, phone),
-         address = COALESCE($4, address),
-         district_id = COALESCE($5, district_id),
-         city = COALESCE($6, city),
-         state = COALESCE($7, state),
-         pincode = COALESCE($8, pincode),
-         blood_group_id = COALESCE($9, blood_group_id),
-         gender = COALESCE($10, gender)
-       WHERE id = $11
-       RETURNING id, first_name, last_name, email, phone, address, city, state, pincode,
-                 blood_group_id, district_id, gender`,
-      [first_name, last_name, phone, address, district_id, city, state, pincode, blood_group_id, gender, userId]
+      "UPDATE users SET name=$1 WHERE id=$2 RETURNING id, name, email, is_verified",
+      [name, userId]
     );
 
-    if (!result.rows.length) return res.status(404).json({ message: "User not found" });
+    if (!result.rows.length) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-    res.json({ message: "Profile updated successfully", user: result.rows[0] });
+    res.json(result.rows[0]);
   } catch (err) {
-    console.error(err);
+    console.error("👉 Update profile error:", err.message);
     res.status(500).json({ message: "Server error" });
   }
+
+  // try {
+  //   const userId = req.user.id;
+  //   const updates = req.body; // 👈 may contain only partial fields
+
+  //   // Build dynamic SQL
+  //   const fields = Object.keys(updates);
+  //   const values = Object.values(updates);
+
+  //   if (fields.length === 0) {
+  //     return res.status(400).json({ message: "No fields to update" });
+  //   }
+
+  //   const setClause = fields.map((f, i) => `${f} = $${i + 1}`).join(", ");
+  //   const query = `UPDATE users SET ${setClause} WHERE id = $${fields.length + 1}`;
+
+  //   await pool.query(query, [...values, userId]);
+
+  //   res.json({ message: "Profile updated successfully" });
+  // } catch (err) {
+  //   console.error("Update profile error:", err);
+  //   res.status(500).json({ message: "Server error" });
+  // }
 };
+

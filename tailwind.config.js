@@ -55,6 +55,25 @@ module.exports = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+
+      // 🔴 Blood drop & pulse animations
+      keyframes: {
+        // old pulse effect (renamed)
+        bloodpulse: {
+          "0%, 100%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.1)" },
+        },
+        // new dripping effect
+        blooddrop: {
+          "0%": { transform: "translateY(0)", opacity: "1" },
+          "70%": { transform: "translateY(80px)", opacity: "1" },
+          "100%": { transform: "translateY(120px)", opacity: "0" },
+        },
+      },
+      animation: {
+        bloodpulse: "bloodpulse 5s ease-in-out infinite",
+        blooddrop: "blooddrop 3s ease-in-out infinite",
+      },
     },
   },
   plugins: [],

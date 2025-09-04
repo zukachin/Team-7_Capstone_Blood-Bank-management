@@ -28,6 +28,8 @@ import CookiePolicy from "./pages/CookiePolicy";
 import Accessibility from "./pages/Accessibility";
 import TermsConditions from "./pages/TermsConditions";
 
+
+
 const queryClient = new QueryClient();
 
 export default function App() {
@@ -63,9 +65,15 @@ export default function App() {
             <Route path="/cookie-policy" element={<CookiePolicy />} />
             <Route path="/accessibility" element={<Accessibility />} />
             <Route path="/terms-conditions" element={<TermsConditions />} />
+            
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
+
+
+            
+         
+
 
           </Routes>
         </BrowserRouter>

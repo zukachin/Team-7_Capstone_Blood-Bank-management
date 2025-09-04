@@ -53,7 +53,7 @@ const BloodStockAvailability = () => {
         </h1>
 
         {/* Filters */}
-        <div className="bg-gray-900 shadow-md rounded-xl p-6 mb-8">
+        <div className="bg-black-900 shadow-md rounded-xl p-6 mb-8">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* State */}
             <select
@@ -107,7 +107,7 @@ const BloodStockAvailability = () => {
             <div className="mt-6">
             <button
                 onClick={handleSearch}
-                className="bg-blood-dark hover:bg-blood-light text-white px-6 py-2 rounded-lg transition"
+                className="bg-red-600 hover:bg-red-900 text-white px-6 py-2 rounded-lg transition"
             >
                 {loading ? "Searching..." : "Search"}
             </button>
@@ -117,7 +117,7 @@ const BloodStockAvailability = () => {
         {/* Results Table */}
         <div className="bg-white shadow-md rounded-xl overflow-x-auto">
             <table className="w-full border-collapse">
-            <thead className="bg-blood-dark text-white">
+            <thead className="bg-red-600 text-white">
                 <tr>
                 <th className="p-3 border">S.No</th>
                 <th className="p-3 border">Blood Bank</th>

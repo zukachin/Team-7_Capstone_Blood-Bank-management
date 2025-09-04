@@ -1,109 +1,131 @@
-import React from "react"
+import React, { useState, useEffect } from "react";
 
 export function CallToActionSections() {
+  const [pulse, setPulse] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPulse(prev => !prev);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <section className="bg-black py-20 relative">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Background overlay */}
-        <div className="absolute inset-0 bg-black/50 mix-blend-lighten opacity-50"></div>
+    <section className="bg-black py-20 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 opacity-10">
+        {[...Array(15)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full bg-red-600"
+            style={{
+              width: Math.random() * 100 + 20 + 'px',
+              height: Math.random() * 100 + 20 + 'px',
+              top: Math.random() * 100 + '%',
+              left: Math.random() * 100 + '%',
+              animation: `pulse ${Math.random() * 3 + 2}s infinite alternate`
+            }}
+          ></div>
+        ))}
+      </div>
 
-        {/* Background medical image */}
-        <div className="absolute inset-0 flex justify-center items-center">
-          <img
-            src="https://api.builder.io/api/v1/image/assets/TEMP/b6bcc6c6e0003208dd2401ecdb3a0f8c4276e3f0?width=860"
-            alt="Medical background"
-            className="w-full max-w-2xl h-auto opacity-33 mix-blend-hard-light"
-          />
-        </div>
-
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Content Grid */}
-        <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
           {/* Be a Real-Life Superhero */}
-          <div className="bg-black/30 rounded-md p-6 backdrop-blur-sm">
-            <h3
-              className="text-white text-3xl md:text-4xl font-bold leading-tight"
-              style={{
-                fontFamily:
-                  "Lora, -apple-system, Roboto, Helvetica, sans-serif",
-              }}
-            >
+          <div className="bg-gradient-to-b from-gray-900 to-black rounded-xl p-8 border border-red-800/30 transform hover:-translate-y-2 transition-transform duration-300 group">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-900/20 group-hover:bg-red-900/40 transition-colors">
+                <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-white text-2xl font-bold text-center mb-4 group-hover:text-red-400 transition-colors">
               Be a Real-Life Superhero
             </h3>
+            <p className="text-gray-400 text-center">
+              Your blood donation can save up to three lives. Become someone's hero today.
+            </p>
           </div>
 
           {/* Zero Cost, Infinite Impact */}
-          <div className="bg-black/30 rounded-md p-6 backdrop-blur-sm">
-            <h3
-              className="text-white text-3xl md:text-4xl font-bold leading-tight text-center"
-              style={{
-                fontFamily:
-                  "Lora, -apple-system, Roboto, Helvetica, sans-serif",
-              }}
-            >
+          <div className="bg-gradient-to-b from-gray-900 to-black rounded-xl p-8 border border-red-800/30 transform hover:-translate-y-2 transition-transform duration-300 group">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-900/20 group-hover:bg-red-900/40 transition-colors">
+                <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-white text-2xl font-bold text-center mb-4 group-hover:text-red-400 transition-colors">
               Zero Cost, Infinite Impact
             </h3>
+            <p className="text-gray-400 text-center">
+              Donating blood costs you nothing but an hour of your time, yet its impact lasts a lifetime.
+            </p>
           </div>
 
           {/* It Takes only 1 hour */}
-          <div className="bg-black/30 rounded-md p-6 backdrop-blur-sm">
-            <h3
-              className="text-white text-3xl md:text-4xl font-bold leading-tight text-center"
-              style={{
-                fontFamily:
-                  "Lora, -apple-system, Roboto, Helvetica, sans-serif",
-              }}
-            >
+          <div className="bg-gradient-to-b from-gray-900 to-black rounded-xl p-8 border border-red-800/30 transform hover:-translate-y-2 transition-transform duration-300 group">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-900/20 group-hover:bg-red-900/40 transition-colors">
+                <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-white text-2xl font-bold text-center mb-4 group-hover:text-red-400 transition-colors">
               It Takes only 1 hour
             </h3>
+            <p className="text-gray-400 text-center">
+              The entire process from registration to recovery takes less time than watching a movie.
+            </p>
           </div>
         </div>
 
         {/* Main CTA Section */}
-        <div className="relative text-center space-y-8">
-          {/* Blood drop icons */}
-          <div className="flex justify-center space-x-12 mb-8">
-            {/* Left blood drop */}
-            <svg
-              width="127"
-              height="152"
-              viewBox="0 0 127 152"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-32"
-            >
-              <path
-                d="M0.5 39.7772C0.5 39.1074 0.835293 38.482 1.39318 38.1114L56.9842 1.17496C57.608 0.760481 58.4111 0.729268 59.0652 1.09408L125.474 38.1327C126.107 38.4859 126.5 39.1542 126.5 39.8794V149.5C126.5 150.605 125.605 151.5 124.5 151.5H2.5C1.39543 151.5 0.5 150.605 0.5 149.5V39.7772Z"
-                fill="#A70D0D"
-              />
-            </svg>
-
-            {/* Right blood drop */}
-            <svg
-              width="126"
-              height="151"
-              viewBox="0 0 126 151"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-32"
-            >
-              <path
-                d="M0 39.2772C0 38.6074 0.335293 37.982 0.893178 37.6114L56.4842 0.67496C57.108 0.260481 57.9111 0.229268 58.5652 0.594081L124.974 37.6327C125.607 37.9859 126 38.6542 126 39.3794V149C126 150.105 125.105 151 124 151H2C0.89543 151 0 150.105 0 149V39.2772Z"
-                fill="#8A1717"
-              />
-            </svg>
+        <div className="text-center space-y-8 relative">
+          {/* Animated blood drop */}
+          <div className="flex justify-center mb-8">
+            <div className="relative">
+              <div className={`absolute inset-0 rounded-full bg-red-600 opacity-75 ${pulse ? 'animate-ping' : ''}`}></div>
+              <svg
+                className="h-32 w-32 text-red-600 filter drop-shadow-lg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
+            </div>
           </div>
 
           {/* Main CTA Text */}
-          <h2
-            className="text-white text-4xl md:text-5xl lg:text-6xl font-bold leading-tight max-w-3xl mx-auto"
-            style={{
-              fontFamily: "Lora, -apple-system, Roboto, Helvetica, sans-serif",
-            }}
-          >
+          <h2 className="text-white text-4xl md:text-5xl lg:text-6xl font-bold leading-tight max-w-3xl mx-auto mb-8">
             You have the power to save someone's tomorrow — start today.
           </h2>
+
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row justify-center gap-6 mt-12">
+            <button className="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-10 rounded-full transition-all transform hover:scale-105 shadow-lg shadow-red-500/20 hover:shadow-red-500/40">
+              Register Now
+            </button>
+            <button className="bg-transparent hover:bg-gray-800 text-white font-bold py-4 px-10 rounded-full border-2 border-red-600 transition-all transform hover:scale-105">
+              Learn More
+            </button>
+          </div>
+
+        
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes pulse {
+          0% { opacity: 0.1; transform: scale(0.8); }
+          50% { opacity: 0.2; transform: scale(1.1); }
+          100% { opacity: 0.1; transform: scale(0.8); }
+        }
+      `}</style>
     </section>
   );
 }

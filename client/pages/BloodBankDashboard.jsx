@@ -1,6 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Search, RefreshCw, Users, Droplet, User, Activity, Calendar, Award, Download, MapPin, Phone, Mail, Star, Trophy, Heart } from "lucide-react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+// Register GSAP plugins
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 const UserBloodDashboard = () => {
   // User profile and donation data
@@ -11,6 +18,16 @@ const UserBloodDashboard = () => {
   const [nextEligibleDate, setNextEligibleDate] = useState("");
   const [loading, setLoading] = useState(true);
   const [showCertificate, setShowCertificate] = useState(null);
+  
+  // Refs for GSAP animations
+  const headerRef = useRef(null);
+  const welcomeRef = useRef(null);
+  const statsRef = useRef(null);
+  const profileRef = useRef(null);
+  const eligibilityRef = useRef(null);
+  const achievementsRef = useRef(null);
+  const historyRef = useRef(null);
+  const footerRef = useRef(null);
 
   // Simulated user data
   const fetchUserProfile = async () => {
@@ -77,6 +94,115 @@ const UserBloodDashboard = () => {
     });
   };
 
+  // GSAP Animations
+  useEffect(() => {
+    if (!loading) {
+      // Header animation
+      gsap.fromTo(headerRef.current, 
+        { y: -100, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" }
+      );
+
+      // Welcome section animation
+      gsap.fromTo(welcomeRef.current.children, 
+        { y: 50, opacity: 0 },
+        { 
+          y: 0, 
+          opacity: 1, 
+          duration: 0.8, 
+          stagger: 0.15,
+          scrollTrigger: {
+            trigger: welcomeRef.current,
+            start: "top 80%",
+            toggleActions: "play none none none"
+          }
+        }
+      );
+
+      // Stats counter animation
+      const stats = statsRef.current.children;
+      gsap.fromTo(stats, 
+        { scale: 0.8, opacity: 0 },
+        { 
+          scale: 1, 
+          opacity: 1, 
+          duration: 0.6, 
+          stagger: 0.1,
+          scrollTrigger: {
+            trigger: statsRef.current,
+            start: "top 85%",
+            toggleActions: "play none none none"
+          }
+        }
+      );
+
+      // Profile and eligibility section
+      gsap.fromTo([profileRef.current, eligibilityRef.current], 
+        { x: -50, opacity: 0 },
+        { 
+          x: 0, 
+          opacity: 1, 
+          duration: 0.8, 
+          stagger: 0.2,
+          scrollTrigger: {
+            trigger: profileRef.current,
+            start: "top 75%",
+            toggleActions: "play none none none"
+          }
+        }
+      );
+
+      // Achievements animation
+      const achievementCards = achievementsRef.current.children;
+      gsap.fromTo(achievementCards, 
+        { y: 50, opacity: 0 },
+        { 
+          y: 0, 
+          opacity: 1, 
+          duration: 0.6, 
+          stagger: 0.1,
+          scrollTrigger: {
+            trigger: achievementsRef.current,
+            start: "top 75%",
+            toggleActions: "play none none none"
+          }
+        }
+      );
+
+      // History section animation
+      const historyItems = historyRef.current.children;
+      gsap.fromTo(historyItems, 
+        { x: -30, opacity: 0 },
+        { 
+          x: 0, 
+          opacity: 1, 
+          duration: 0.6, 
+          stagger: 0.1,
+          scrollTrigger: {
+            trigger: historyRef.current,
+            start: "top 75%",
+            toggleActions: "play none none none"
+          }
+        }
+      );
+
+      // Footer animation
+      gsap.fromTo(footerRef.current, 
+        { y: 30, opacity: 0 },
+        { 
+          y: 0, 
+          opacity: 1, 
+          duration: 0.8,
+          scrollTrigger: {
+            trigger: footerRef.current,
+            start: "top 85%",
+            toggleActions: "play none none none"
+          }
+        }
+      );
+    }
+  }, [loading]);
+
   // Load data on component mount
   useEffect(() => {
     const loadData = async () => {
@@ -121,7 +247,35 @@ const UserBloodDashboard = () => {
 
   const downloadCertificate = (donation) => {
     const cert = generateCertificate(donation);
+    
+    // Animate certificate modal appearance
     setShowCertificate(cert);
+    
+    // Animate the modal in after a slight delay to allow state to update
+    setTimeout(() => {
+      const modal = document.querySelector(".certificate-modal");
+      if (modal) {
+        gsap.fromTo(modal, 
+          { scale: 0.8, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(1.7)" }
+        );
+      }
+    }, 10);
+  };
+
+  const closeCertificate = () => {
+    const modal = document.querySelector(".certificate-modal");
+    if (modal) {
+      gsap.to(modal, {
+        scale: 0.8,
+        opacity: 0,
+        duration: 0.3,
+        ease: "power2.in",
+        onComplete: () => setShowCertificate(null)
+      });
+    } else {
+      setShowCertificate(null);
+    }
   };
 
   const getAchievementIcon = (iconType) => {
@@ -149,7 +303,7 @@ const UserBloodDashboard = () => {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Navigation Bar */}
-      <header className="w-full bg-black border-b border-gray-900">
+      <header ref={headerRef} className="w-full bg-black border-b border-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
@@ -198,7 +352,7 @@ const UserBloodDashboard = () => {
                 Want to donate Blood
               </a>
               <a
-                href="/dashboard"
+                href="/blood-bank-dashboard"
                 className="text-red-500 hover:text-red-400 text-xl transition-colors"
               >
                 Blood Bank Dashboard
@@ -221,7 +375,7 @@ const UserBloodDashboard = () => {
 
       <div className="px-6 py-8">
         {/* Welcome Section */}
-        <div className="mb-12 text-center">
+        <div ref={welcomeRef} className="mb-12 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
             <span className="text-white">Welcome Back, </span>
             <span className="text-red-500">{userProfile.name.split(' ')[0]}</span>
@@ -233,7 +387,7 @@ const UserBloodDashboard = () => {
           </p>
 
           {/* Personal Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+          <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
             <div className="text-center">
               <div className="text-4xl font-bold text-white mb-2">
                 {userProfile.totalDonations}
@@ -258,7 +412,7 @@ const UserBloodDashboard = () => {
         {/* Profile & Next Donation */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
           {/* Profile Info */}
-          <div className="lg:col-span-2 bg-black-900 bg-opacity-50 rounded-2xl p-6 border border-gray-800">
+          <div ref={profileRef} className="lg:col-span-2 bg-black-900 bg-opacity-50 rounded-2xl p-6 border border-gray-800">
             <h3 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
               <User className="w-5 h-5 text-red-400" />
               Donor Profile
@@ -305,7 +459,7 @@ const UserBloodDashboard = () => {
           </div>
 
           {/* Next Donation Eligibility */}
-          <div className="bg-gradient-to-br from-red-900 to-red-800 rounded-2xl p-6 border border-red-700">
+          <div ref={eligibilityRef} className="bg-gradient-to-br from-red-900 to-red-800 rounded-2xl p-6 border border-red-700">
             <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
               <Calendar className="w-5 h-5" />
               Next Donation
@@ -323,7 +477,7 @@ const UserBloodDashboard = () => {
         {/* Achievements Section */}
         <div className="mb-12">
           <h2 className="text-2xl font-semibold text-white mb-6">Your Achievements</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div ref={achievementsRef} className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {achievements.map((achievement) => (
               <div
                 key={achievement.id}
@@ -350,7 +504,7 @@ const UserBloodDashboard = () => {
         <div className="mb-12">
           <h2 className="text-2xl font-semibold text-white mb-6">Donation History & Certificates</h2>
           <div className="bg-gray-900 bg-opacity-50 rounded-2xl p-6 border border-gray-800">
-            <div className="space-y-4">
+            <div ref={historyRef} className="space-y-4">
               {donationHistory.map((donation) => (
                 <div key={donation.id} className="bg-black bg-opacity-30 rounded-xl p-4 border border-gray-800 hover:border-gray-700 transition-colors">
                   <div className="flex items-center justify-between">
@@ -383,7 +537,7 @@ const UserBloodDashboard = () => {
         </div>
 
         {/* Footer Message */}
-        <div className="text-center">
+        <div ref={footerRef} className="text-center">
           <p className="text-red-400 text-lg font-medium">Thank you for being a life saver! ❤️</p>
         </div>
       </div>
@@ -391,9 +545,9 @@ const UserBloodDashboard = () => {
       {/* Certificate Modal */}
       {showCertificate && (
         <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
-          <div className="bg-white text-black rounded-2xl p-8 max-w-2xl w-full relative">
+          <div className="certificate-modal bg-white text-black rounded-2xl p-8 max-w-2xl w-full relative">
             <button
-              onClick={() => setShowCertificate(null)}
+              onClick={closeCertificate}
               className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
             >
               ✕

@@ -8,7 +8,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import LookingForBlood from "./pages/LookingForBlood";
 import WantToDonate from "./pages/WantToDonate";
-import Dashboard from "./pages/Dashboard";
+// import Dashboard from "./pages/Dashboard";
 import SignUp from "./pages/SignUp";
 import RegisterDonor from "./pages/RegisterDonor";
 import Login from "./pages/LoginPage";
@@ -41,7 +41,7 @@ export default function App() {
             <Route path="/" element={<Index />} />
             <Route path="/looking-for-blood" element={<LookingForBlood />} />
             <Route path="/want-to-donate" element={<WantToDonate />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            {/* <Route path="/dashboard" element={<Dashboard />} /> */}
             <Route path="/signUp" element={<SignUp />} />
             <Route path="/register-donor" element={<RegisterDonor />} />
             <Route path="/donor-portal" element={<DonorPortalPage />} />  

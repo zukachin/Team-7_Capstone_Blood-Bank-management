@@ -21,6 +21,12 @@ import BloodStockAvailability from "./pages/BloodStockAvailability";
 import VerifyOtp from "./pages/VerifyOtp";
 import ProtectedRoute from "./components/ProtectedRoute";
 import UserMenu from "./components/UserMenu";
+import UserBloodDashboard from "./pages/BloodBankDashboard";
+import StaticPageLayout from "./components/ui/StaticPageLayout";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import CookiePolicy from "./pages/CookiePolicy";
+import Accessibility from "./pages/Accessibility";
+import TermsConditions from "./pages/TermsConditions";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +57,12 @@ export default function App() {
             <Route path="/donation-camps" element={<DonationCamps />} />
             <Route path="/stock-availability" element={<BloodStockAvailability />} />
             <Route path="/verify-otp" element={<VerifyOtp />} />
+
+            <Route path="/blood-bank-dashboard" element={<UserBloodDashboard />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/cookie-policy" element={<CookiePolicy />} />
+            <Route path="/accessibility" element={<Accessibility />} />
+            <Route path="/terms-conditions" element={<TermsConditions />} />
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

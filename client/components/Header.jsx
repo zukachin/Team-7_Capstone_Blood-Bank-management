@@ -243,7 +243,7 @@ export function Header() {
             </div>
 
             <Link
-              to="/dashboard"
+              to="/blood-bank-dashboard"
               className="text-white font-normal text-base hover:text-blood-light transition-colors"
               style={{ fontFamily: "Lora, -apple-system, Roboto, Helvetica, sans-serif" }}
             >
@@ -307,7 +307,7 @@ export function Header() {
             <Link to="/" className="text-blood-light font-normal text-base hover:text-white transition-colors py-2">Home</Link>
             <Link to="/looking-for-blood" className="text-white font-normal text-base hover:text-blood-light transition-colors py-2">Looking for Blood</Link>
             <Link to="/want-to-donate" className="text-white font-normal text-base hover:text-blood-light transition-colors py-2">Want to donate Blood</Link>
-            <Link to="/dashboard" className="text-white font-normal text-base hover:text-blood-light transition-colors py-2">Blood Bank Dashboard</Link>
+            <Link to="/blood-bank-dashboard" className="text-white font-normal text-base hover:text-blood-light transition-colors py-2">Blood Bank Dashboard</Link>
 
             {!isLoggedIn && (
               <Link to="/signup" className="text-blood-light font-normal text-base hover:text-white transition-colors py-2">

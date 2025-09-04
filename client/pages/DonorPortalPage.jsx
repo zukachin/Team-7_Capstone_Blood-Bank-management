@@ -64,7 +64,7 @@ const DonorPortalPage = () => {
                 Want to donate Blood
               </button>
               <button
-                onClick={() => handleNavigation("/dashboard")}
+                onClick={() => handleNavigation("/blood-bank-dashboard")}
                 className="hover:text-red-400 text-xl transition-colors"
               >
                 Blood Bank Dashboard

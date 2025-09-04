@@ -48,7 +48,7 @@ const swaggerDocs = swaggerJsdoc(swaggerOptions);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // Routes
-app.use("/auth", authRoutes);
+app.use("/admin", authRoutes);
 app.use("/donor", donorRoutes);
 app.use("/counseling", counselingRoutes);
 

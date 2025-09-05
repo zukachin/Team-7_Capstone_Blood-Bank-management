@@ -27,10 +27,6 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CookiePolicy from "./pages/CookiePolicy";
 import Accessibility from "./pages/Accessibility";
 import TermsConditions from "./pages/TermsConditions";
-import AdminLogin from "./pages/admin/AdminLogin";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import DonorRegister from "./pages/admin/DonorRegister";
-import DonorCounseling from "./pages/admin/DonorCounseling";
 
 
 
@@ -70,14 +66,6 @@ export default function App() {
             <Route path="/accessibility" element={<Accessibility />} />
             <Route path="/terms-conditions" element={<TermsConditions />} />
             
-
-            //Admin
-            
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin" element={<AdminDashboard />}>
-              <Route path="donors/register" element={<DonorRegister />} />
-              <Route path="donors/counseling" element={<DonorCounseling />} />
-            </Route>
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

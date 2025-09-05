@@ -1,19 +1,107 @@
-import React from "react";
-import { useNavigate, Link } from "react-router-dom"; // ✅ added Link
+import React, { useEffect, useRef } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { gsap } from "gsap";
 
 const DonorPortalPage = () => {
-  const navigate = useNavigate(); // ✅ create navigate instance
+  const navigate = useNavigate();
+  const mainRef = useRef(null);
+  const titleRef = useRef(null);
+  const cardsRef = useRef([]);
+  const buttonRef = useRef(null);
 
   const handleNavigation = (path) => {
-    navigate(path); // ✅ navigate to page
+    // Animate out before navigation
+    gsap.to(mainRef.current, {
+      opacity: 0,
+      duration: 0.5,
+      onComplete: () => navigate(path)
+    });
   };
 
   const handleBackToHome = () => {
-    navigate("/"); // ✅ go to home
+    gsap.to(mainRef.current, {
+      opacity: 0,
+      duration: 0.5,
+      onComplete: () => navigate("/")
+    });
+  };
+
+  useEffect(() => {
+    // Initial animation sequence
+    const tl = gsap.timeline();
+    
+    // Animate in the main content
+    tl.fromTo(mainRef.current, 
+      { opacity: 0 },
+      { opacity: 1, duration: 0.8 }
+    );
+    
+    // Animate title
+    tl.fromTo(titleRef.current,
+      { y: 50, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.7, ease: "back.out(1.7)" },
+      "-=0.4"
+    );
+    
+    // Stagger animation for cards
+    tl.fromTo(cardsRef.current,
+      { y: 30, opacity: 0 },
+      { 
+        y: 0, 
+        opacity: 1, 
+        duration: 0.6, 
+        stagger: 0.15,
+        ease: "power2.out"
+      },
+      "-=0.3"
+    );
+    
+    // Animate button
+    tl.fromTo(buttonRef.current,
+      { y: 20, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.5 },
+      "-=0.2"
+    );
+
+    // Add hover animations for cards
+    cardsRef.current.forEach(card => {
+      card.addEventListener('mouseenter', () => {
+        gsap.to(card, {
+          y: -8,
+          duration: 0.3,
+          ease: "power1.out"
+        });
+      });
+      
+      card.addEventListener('mouseleave', () => {
+        gsap.to(card, {
+          y: 0,
+          duration: 0.3,
+          ease: "power1.out"
+        });
+      });
+    });
+
+    return () => {
+      // Clean up event listeners
+      cardsRef.current.forEach(card => {
+        if (card) {
+          card.removeEventListener('mouseenter', () => {});
+          card.removeEventListener('mouseleave', () => {});
+        }
+      });
+    };
+  }, []);
+
+  // Add cards to ref array
+  const addToRefs = (el) => {
+    if (el && !cardsRef.current.includes(el)) {
+      cardsRef.current.push(el);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-black text-white" ref={mainRef}>
       {/* Navigation */}
       <header className="w-full bg-black border-b border-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -77,7 +165,10 @@ const DonorPortalPage = () => {
       {/* Main Content */}
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-160px)] px-6">
         {/* Title */}
-        <h1 className="text-5xl font-bold mb-16 text-center tracking-wide">
+        <h1 
+          ref={titleRef}
+          className="text-5xl font-bold mb-16 text-center tracking-wide"
+        >
           DONOR PORTAL
         </h1>
 
@@ -85,6 +176,7 @@ const DonorPortalPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-4xl w-full mb-16">
           {/* Register as Donor Card */}
           <div
+            ref={addToRefs}
             className="bg-gray-900 rounded-lg p-8 hover:bg-gray-800 transition-colors cursor-pointer group"
             onClick={() => handleNavigation("/register-donor")}
           >
@@ -100,6 +192,7 @@ const DonorPortalPage = () => {
 
           {/* My Appointments Card */}
           <div
+            ref={addToRefs}
             className="bg-gray-900 rounded-lg p-8 hover:bg-gray-800 transition-colors cursor-pointer group"
             onClick={() => handleNavigation("/my-appointments")}
           >
@@ -115,6 +208,7 @@ const DonorPortalPage = () => {
 
           {/* Book Appointments Card */}
           <div
+            ref={addToRefs}
             className="bg-gray-900 rounded-lg p-8 hover:bg-gray-800 transition-colors cursor-pointer group md:col-span-2 lg:col-span-1 mx-auto md:mx-0"
             onClick={() => handleNavigation("/book-appointments")}
           >
@@ -131,6 +225,7 @@ const DonorPortalPage = () => {
 
         {/* Back to Home Button */}
         <button
+          ref={buttonRef}
           onClick={handleBackToHome}
           className="text-white hover:text-red-400 transition-colors text-lg font-medium"
         >

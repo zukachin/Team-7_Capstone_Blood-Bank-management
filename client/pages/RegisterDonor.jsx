@@ -14,8 +14,12 @@ const RegisterDonor = () => {
     bloodGroup: '',
     dateOfBirth: '',
     lastDonationDate: '',
+    medicalIssues: '',
+    weight: '',
     consent: false,
   });
+
+  const [showConsentInfo, setShowConsentInfo] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -41,18 +45,15 @@ const RegisterDonor = () => {
       <div className="w-full max-w-5xl bg-neutral-900 p-10 rounded-2xl shadow-xl">
         <h1 className="text-4xl font-bold mb-10 text-center">Register as Donor</h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+        <div className="flex flex-col md:flex-row gap-8">
           {/* Left Column */}
-          <div className="space-y-6">
+          <div className="flex-1 flex flex-col space-y-6">
             <InputField label="Full Name" name="fullName" value={formData.fullName} onChange={handleInputChange} />
             <InputField label="Email Id" name="emailId" type="email" value={formData.emailId} onChange={handleInputChange} />
             <InputField label="Phone Number" name="phoneNumber" type="tel" value={formData.phoneNumber} onChange={handleInputChange} />
             <InputField label="Address" name="address" value={formData.address} onChange={handleInputChange} />
             <InputField label="Location" name="location" value={formData.location} onChange={handleInputChange} />
-          </div>
 
-          {/* Right Column */}
-          <div className="space-y-6">
             {/* Gender */}
             <div>
               <label className="block text-lg mb-2">Gender:</label>
@@ -69,9 +70,13 @@ const RegisterDonor = () => {
                 <option value="other">Other</option>
               </select>
             </div>
+          </div>
 
+          {/* Right Column */}
+          <div className="flex-1 flex flex-col space-y-6">
             <InputField label="Age" name="age" type="number" value={formData.age} onChange={handleInputChange} min="18" max="65" />
-            
+            <InputField label="Weight (kg)" name="weight" type="number" value={formData.weight} onChange={handleInputChange} min="40" />
+
             {/* Blood Group */}
             <div>
               <label className="block text-lg mb-2">Blood Group:</label>
@@ -94,6 +99,33 @@ const RegisterDonor = () => {
             <InputField label="Date of Birth" name="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={handleInputChange} />
             <InputField label="Last Donation Date (if any)" name="lastDonationDate" type="date" value={formData.lastDonationDate} onChange={handleInputChange} />
 
+            {/* Medical Issues */}
+            <div>
+              <label className="block text-lg mb-2">Medical Issues:</label>
+              <select
+                name="medicalIssues"
+                value={formData.medicalIssues}
+                onChange={handleInputChange}
+                className="w-full bg-black border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none transition-colors"
+              >
+                <option value="">Select Option</option>
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+              {formData.medicalIssues === 'yes' && (
+                <div className="mt-3 p-4 bg-red-900/40 border border-red-600 rounded-lg text-red-400 text-sm">
+                  ⚠ For your safety, you are <strong>not eligible</strong> to donate blood right now.
+                  <br />
+                  👉 But you can still help by:
+                  <ul className="list-disc list-inside mt-2">
+                    <li>Spreading awareness about blood donation</li>
+                    <li>Encouraging friends or family to donate</li>
+                    <li>Volunteering at blood donation drives</li>
+                  </ul>
+                </div>
+              )}
+            </div>
+
             {/* Consent */}
             <div className="flex items-center space-x-3">
               <input
@@ -103,7 +135,13 @@ const RegisterDonor = () => {
                 onChange={handleInputChange}
                 className="w-5 h-5 accent-red-600"
               />
-              <label className="text-sm font-medium">Consent & Agreements</label>
+              <button
+                type="button"
+                className="text-sm font-medium underline text-red-400 hover:text-red-500"
+                onClick={() => setShowConsentInfo(true)}
+              >
+                Consent & Agreements
+              </button>
             </div>
           </div>
         </div>
@@ -113,7 +151,11 @@ const RegisterDonor = () => {
           <button
             type="button"
             onClick={handleSubmit}
-            className="w-full md:w-1/2 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200"
+            disabled={formData.medicalIssues === 'yes'}
+            className={`w-full md:w-1/2 py-3 px-6 rounded-lg font-bold transition-colors duration-200 
+              ${formData.medicalIssues === 'yes' 
+                ? 'bg-gray-600 cursor-not-allowed text-gray-300' 
+                : 'bg-red-600 hover:bg-red-700 text-white'}`}
           >
             Register Now
           </button>
@@ -126,6 +168,30 @@ const RegisterDonor = () => {
           </button>
         </div>
       </div>
+
+      {/* Consent Modal */}
+      {showConsentInfo && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-neutral-900 text-white p-8 rounded-xl max-w-lg w-full shadow-lg">
+            <h2 className="text-2xl font-bold mb-4">Consent & Agreements</h2>
+            <p className="mb-4 text-sm text-gray-300">
+              By registering as a blood donor, you agree that:
+              <br />- You are in good health and meet the eligibility criteria.
+              <br />- You have not donated blood in the last 3 months.
+              <br />- You will provide accurate health information.
+              <br />- Your data will be stored securely for donor management purposes.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                className="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600"
+                onClick={() => setShowConsentInfo(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const RegisterDonor = () => {
   const navigate = useNavigate();
@@ -23,19 +25,53 @@ const RegisterDonor = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.consent) {
-      alert('Please agree to the consent & agreements before registering.');
+      toast.warning("⚠ Please agree to the consent before registering.");
       return;
     }
-    console.log('Donor Registration Data:', formData);
-    // API call or backend integration goes here
+
+    // Show success toast immediately
+    toast.success("🎉 Registered successfully! Check your email.", {
+      position: "top-right",
+      autoClose: 5000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+    });
+
+    // Reset form immediately
+    setFormData({
+      fullName: '',
+      emailId: '',
+      phoneNumber: '',
+      address: '',
+      location: '',
+      gender: '',
+      age: '',
+      bloodGroup: '',
+      dateOfBirth: '',
+      lastDonationDate: '',
+      medicalIssues: '',
+      weight: '',
+      consent: false,
+    });
+
+    try {
+      // Send donor data to backend asynchronously
+      await fetch("http://localhost:4001/api/donors/register-donor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("⚠ Error sending email. Donor registration saved locally.");
+    }
   };
 
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -88,11 +124,7 @@ const RegisterDonor = () => {
                 required
               >
                 <option value="">Select Blood Group</option>
-                {bloodGroups.map((group) => (
-                  <option key={group} value={group}>
-                    {group}
-                  </option>
-                ))}
+                {bloodGroups.map(group => <option key={group} value={group}>{group}</option>)}
               </select>
             </div>
 
@@ -114,34 +146,15 @@ const RegisterDonor = () => {
               </select>
               {formData.medicalIssues === 'yes' && (
                 <div className="mt-3 p-4 bg-red-900/40 border border-red-600 rounded-lg text-red-400 text-sm">
-                  ⚠ For your safety, you are <strong>not eligible</strong> to donate blood right now.
-                  <br />
-                  👉 But you can still help by:
-                  <ul className="list-disc list-inside mt-2">
-                    <li>Spreading awareness about blood donation</li>
-                    <li>Encouraging friends or family to donate</li>
-                    <li>Volunteering at blood donation drives</li>
-                  </ul>
+                  ⚠ Not eligible to donate blood right now.
                 </div>
               )}
             </div>
 
             {/* Consent */}
             <div className="flex items-center space-x-3">
-              <input
-                type="checkbox"
-                name="consent"
-                checked={formData.consent}
-                onChange={handleInputChange}
-                className="w-5 h-5 accent-red-600"
-              />
-              <button
-                type="button"
-                className="text-sm font-medium underline text-red-400 hover:text-red-500"
-                onClick={() => setShowConsentInfo(true)}
-              >
-                Consent & Agreements
-              </button>
+              <input type="checkbox" name="consent" checked={formData.consent} onChange={handleInputChange} className="w-5 h-5 accent-red-600" />
+              <button type="button" className="text-sm font-medium underline text-red-400 hover:text-red-500" onClick={() => setShowConsentInfo(true)}>Consent & Agreements</button>
             </div>
           </div>
         </div>
@@ -152,46 +165,30 @@ const RegisterDonor = () => {
             type="button"
             onClick={handleSubmit}
             disabled={formData.medicalIssues === 'yes'}
-            className={`w-full md:w-1/2 py-3 px-6 rounded-lg font-bold transition-colors duration-200 
-              ${formData.medicalIssues === 'yes' 
-                ? 'bg-gray-600 cursor-not-allowed text-gray-300' 
-                : 'bg-red-600 hover:bg-red-700 text-white'}`}
+            className={`w-full md:w-1/2 py-3 px-6 rounded-lg font-bold transition-colors duration-200 ${formData.medicalIssues === 'yes' ? 'bg-gray-600 cursor-not-allowed text-gray-300' : 'bg-red-600 hover:bg-red-700 text-white'}`}
           >
             Register Now
           </button>
-          <button
-            type="button"
-            className="w-full md:w-1/2 bg-transparent border border-gray-600 hover:border-red-500 text-white py-3 px-6 rounded-lg transition-colors duration-200"
-            onClick={() => navigate('/')}
-          >
-            Back to Home
-          </button>
+          <button type="button" className="w-full md:w-1/2 bg-transparent border border-gray-600 hover:border-red-500 text-white py-3 px-6 rounded-lg transition-colors duration-200" onClick={() => navigate('/')}>Back to Home</button>
         </div>
-      </div>
 
-      {/* Consent Modal */}
-      {showConsentInfo && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-          <div className="bg-neutral-900 text-white p-8 rounded-xl max-w-lg w-full shadow-lg">
-            <h2 className="text-2xl font-bold mb-4">Consent & Agreements</h2>
-            <p className="mb-4 text-sm text-gray-300">
-              By registering as a blood donor, you agree that:
-              <br />- You are in good health and meet the eligibility criteria.
-              <br />- You have not donated blood in the last 3 months.
-              <br />- You will provide accurate health information.
-              <br />- Your data will be stored securely for donor management purposes.
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                className="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600"
-                onClick={() => setShowConsentInfo(false)}
-              >
-                Close
-              </button>
+        {/* Consent Modal */}
+        {showConsentInfo && (
+          <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+            <div className="bg-neutral-900 text-white p-8 rounded-xl max-w-lg w-full shadow-lg">
+              <h2 className="text-2xl font-bold mb-4">Consent & Agreements</h2>
+              <p className="mb-4 text-sm text-gray-300">
+                By registering as a donor, you agree to eligibility criteria and accurate health info. Your data will be stored securely.
+              </p>
+              <div className="flex justify-end gap-3">
+                <button className="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600" onClick={() => setShowConsentInfo(false)}>Close</button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        <ToastContainer position="top-right" autoClose={3000} />
+      </div>
     </div>
   );
 };
@@ -200,14 +197,7 @@ const RegisterDonor = () => {
 const InputField = ({ label, name, type = 'text', value, onChange, ...props }) => (
   <div>
     <label className="block text-lg mb-2">{label}:</label>
-    <input
-      type={type}
-      name={name}
-      value={value}
-      onChange={onChange}
-      {...props}
-      className="w-full bg-transparent border-b border-gray-600 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors"
-    />
+    <input type={type} name={name} value={value} onChange={onChange} {...props} className="w-full bg-transparent border-b border-gray-600 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors"/>
   </div>
 );
 

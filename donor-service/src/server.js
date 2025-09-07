@@ -5,6 +5,7 @@ const profileRoutes = require("./routes/profileRoutes.js"); // <-- import profil
 const donationCamps = require("./routes/donationCamps.js");
 const { pool } = require("./db/pool");
 const cors = require("cors");
+const donorRegisterFormRoutes = require("./routes/donorRegisterFormRoutes.js");
 
 const app = express();
 app.use(express.json());
@@ -18,6 +19,8 @@ app.use("/api/users", authRoutes);
 app.use("/api", profileRoutes); // <-- all routes in profileRoutes.js start with /api
 
 app.use("/api/donation-camps", donationCamps);
+
+app.use("/api/donors", donorRegisterFormRoutes);
 
 const PORT = process.env.PORT || 4001;
 app.listen(PORT, () => {

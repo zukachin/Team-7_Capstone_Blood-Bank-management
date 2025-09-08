@@ -7,10 +7,12 @@ const { pool } = require("./db/pool");
 const cors = require("cors");
 const donorRegisterFormRoutes = require("./routes/donorRegisterFormRoutes.js");
 
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({ origin: ["http://localhost:5173"], credentials: false }));
+const appointmentRoutes = require("./routes/appointmentRoutes");
 
 // Auth routes
 app.use("/api/users", authRoutes);
@@ -21,6 +23,7 @@ app.use("/api", profileRoutes); // <-- all routes in profileRoutes.js start with
 app.use("/api/donation-camps", donationCamps);
 
 app.use("/api/donors", donorRegisterFormRoutes);
+app.use("/api/appointments", appointmentRoutes);
 
 const PORT = process.env.PORT || 4001;
 app.listen(PORT, () => {

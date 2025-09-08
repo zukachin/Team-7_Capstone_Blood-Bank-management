@@ -108,7 +108,7 @@ export function HeroSection() {
                 className="bg-white text-black hover:bg-gray-100 rounded-sm px-6 py-2 sm:px-8 sm:py-3 text-base font-normal underline"
                 style={{ fontFamily: "Love Ya Like A Sister, -apple-system, Roboto, Helvetica, sans-serif" }}
               >
-                Donate Blood
+                Schedule Your Donation
               </Button>
             </div>
 

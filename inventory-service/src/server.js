@@ -1,59 +1,42 @@
-const express = require("express");
-const cors = require("cors");
-require("dotenv").config();
-const path = require("path"); 
+const express = require('express');
+const cors = require('cors');
+const dotenv = require('dotenv');
+dotenv.config();
 
-const authRoutes = require("./routes/authRoutes");
-const donorRoutes = require("./routes/donorRoutes");
-const counselingRoutes = require("./routes/counselingRoutes");
+const authRoutes = require('./routes/authRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const centreRoutes = require('./routes/centreRoutes');
+const locationRoutes= require('./routes/locationRoutes');
+const bloodGroupRoutes=require('./routes/bloodGroupRoutes');
+const apptRoutes = require('./routes/appointmentsRoutes');
+const userApptRoutes = require('./routes/userAppointmentRoutes');
+const campsRoutes = require('./routes/campRoutes');
 
-const swaggerUi = require("swagger-ui-express");
-const swaggerJsdoc = require("swagger-jsdoc");
+
+
+
+
+
+// require jobs so they start running
+require('./jobs/appointmentRemainderJob');
+require('./jobs/campReminder')
 
 const app = express();
-
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Swagger Configuration
-const swaggerOptions = {
-  definition: {
-    openapi: "3.0.0",
-    info: {
-      title: "Blood Bank Management API",
-      version: "1.0.0",
-      description: "API documentation for Blood Bank Management System",
-    },
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: "http",
-          scheme: "bearer",
-          bearerFormat: "JWT",
-        },
-      },
-    },
-    security: [
-      {
-        bearerAuth: [],
-      },
-    ],
-  },
-  apis: [path.join(__dirname, "./routes/*.js")],
 
-};
+app.use('/api/auth', authRoutes);
+app.use('/api/admins', adminRoutes);
+app.use('/api/centres', centreRoutes);
+app.use('/api/locations', locationRoutes);
+app.use('/api/appointments', apptRoutes);
+app.use('/api/userappointments', userApptRoutes); 
+app.use("/api", bloodGroupRoutes);
+app.use('/api/camps', campsRoutes);
+app.get('/', (req, res) => res.json({ message: 'Inventory service running' }));
 
-const swaggerDocs = swaggerJsdoc(swaggerOptions);
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
-
-// Routes
-app.use("/admin", authRoutes);
-app.use("/donor", donorRoutes);
-app.use("/counseling", counselingRoutes);
-
-app.get("/", (req, res) => res.send("Blood Bank API Running"));
-
-// Server Start
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => {
+  console.log(`Inventory service listening on port ${PORT}`);
+});

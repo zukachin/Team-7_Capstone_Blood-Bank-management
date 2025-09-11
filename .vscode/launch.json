@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "donor-service",
+            "type": "node",
+            "cwd": "${workspaceFolder}/donor-service",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": ["start"],  
+        }, 
+        {
+            "name": "inventory-service",
+            "type": "node",
+            "cwd": "${workspaceFolder}/inventory-service",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": ["start"],  
+        }
+    ]
+}

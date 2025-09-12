@@ -2,9 +2,13 @@ import React, { useState, useEffect } from "react";
 
 export default function AdminCenters() {
   const [centers, setCenters] = useState([]);
+  const [states, setStates] = useState([]);
   const [districts, setDistricts] = useState([]);
+  const [filteredDistricts, setFilteredDistricts] = useState([]);
+
   const [formData, setFormData] = useState({
     centre_name: "",
+    state_id: "",
     district_id: "",
     address: "",
   });
@@ -17,13 +21,32 @@ export default function AdminCenters() {
       .catch((err) => console.error("Error fetching centers:", err));
   }, []);
 
-  // Fetch districts for dropdown
+  // Fetch states
+  useEffect(() => {
+    fetch("http://localhost:4000/api/locations/states")
+      .then((res) => res.json())
+      .then((data) => setStates(data))
+      .catch((err) => console.error("Error fetching states:", err));
+  }, []);
+
+  // Fetch all districts once
   useEffect(() => {
     fetch("http://localhost:4000/api/locations/districts")
       .then((res) => res.json())
       .then((data) => setDistricts(data))
       .catch((err) => console.error("Error fetching districts:", err));
   }, []);
+
+  // Filter districts when state changes
+  useEffect(() => {
+    if (formData.state_id) {
+      setFilteredDistricts(
+        districts.filter((d) => d.state_id === parseInt(formData.state_id))
+      );
+    } else {
+      setFilteredDistricts([]);
+    }
+  }, [formData.state_id, districts]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -42,7 +65,7 @@ export default function AdminCenters() {
       if (res.ok) {
         const newCenter = await res.json();
         setCenters([...centers, newCenter]);
-        setFormData({ centre_name: "", district_id: "", address: "" });
+        setFormData({ centre_name: "", state_id: "", district_id: "", address: "" });
       }
     } catch (err) {
       console.error("Error creating center:", err);
@@ -52,7 +75,7 @@ export default function AdminCenters() {
   return (
     <div className="space-y-10">
       {/* Page Header */}
-      <h1 className="text-2xl font-bold text-red-400">Center Management</h1>
+      <h1 className="text-2xl font-bold text-red-600">Center Management</h1>
 
       {/* Create Center Form */}
       <form
@@ -74,16 +97,32 @@ export default function AdminCenters() {
           required
         />
 
-        {/* District Dropdown */}
+        {/* State Dropdown */}
+        <select
+          name="state_id"
+          value={formData.state_id}
+          onChange={handleChange}
+          className="p-3 rounded-lg bg-black border border-gray-700 text-white focus:ring-2 focus:ring-red-500 col-span-2"
+          required
+        >
+          <option value="">Select State</option>
+          {states.map((s) => (
+            <option key={s.state_id} value={s.state_id}>
+              {s.state_name}
+            </option>
+          ))}
+        </select>
+
+        {/* District Dropdown (depends on state) */}
         <select
           name="district_id"
           value={formData.district_id}
           onChange={handleChange}
-          className="p-3 rounded-lg bg-black border border-gray-700 text-white placeholder-gray-500 focus:ring-2 focus:ring-red-500 col-span-2"
+          className="p-3 rounded-lg bg-black border border-gray-700 text-white focus:ring-2 focus:ring-red-500 col-span-2"
           required
         >
           <option value="">Select District</option>
-          {districts.map((d) => (
+          {filteredDistricts.map((d) => (
             <option key={d.district_id} value={d.district_id}>
               {d.district_name}
             </option>
@@ -119,6 +158,7 @@ export default function AdminCenters() {
               <th className="p-3 text-left">ID</th>
               <th className="p-3 text-left">Code</th>
               <th className="p-3 text-left">Name</th>
+              <th className="p-3 text-left">State</th>
               <th className="p-3 text-left">District</th>
               <th className="p-3 text-left">Address</th>
               <th className="p-3 text-left">Created At</th>
@@ -135,10 +175,12 @@ export default function AdminCenters() {
                   <td className="p-3">{center.centre_code}</td>
                   <td className="p-3">{center.centre_name}</td>
                   <td className="p-3">
-                    {
-                      districts.find((d) => d.district_id === center.district_id)
-                        ?.district_name || center.district_id
-                    }
+                    {states.find((s) => s.state_id === center.state_id)?.state_name ||
+                      center.state_id}
+                  </td>
+                  <td className="p-3">
+                    {districts.find((d) => d.district_id === center.district_id)
+                      ?.district_name || center.district_id}
                   </td>
                   <td className="p-3">{center.address}</td>
                   <td className="p-3">
@@ -148,7 +190,7 @@ export default function AdminCenters() {
               ))
             ) : (
               <tr>
-                <td colSpan="6" className="p-3 text-center text-gray-500">
+                <td colSpan="7" className="p-3 text-center text-gray-500">
                   No centers available.
                 </td>
               </tr>

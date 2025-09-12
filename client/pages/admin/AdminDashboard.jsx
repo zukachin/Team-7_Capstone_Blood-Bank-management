@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { Users, MessageSquare, Home } from "lucide-react";
+import { Path } from "three";
 
 export default function AdminDashboard() {
   const location = useLocation();
@@ -8,7 +9,8 @@ export default function AdminDashboard() {
   const links = [
     { path: "/admin/donors/register", label: "Donor Register", icon: <Users size={18} /> },
     { path: "/admin/donors/counseling", label: "Donor Counseling", icon: <MessageSquare size={18} /> },
-    { path: "/admin/centers", label: "Manage Centres", icon: <Home size={18} /> }
+    { path: "/admin/centers", label: "Manage Centres", icon: <Home size={18} /> },
+    { path: "/admin/appointments", label: "Manage Appointments", icon: <Home size={18} /> }
   ];
 
   return (

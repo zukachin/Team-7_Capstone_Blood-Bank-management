@@ -32,6 +32,11 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import DonorRegister from "./pages/admin/DonorRegister";
 import DonorCounseling from "./pages/admin/DonorCounseling";
 import AdminCenters from "./pages/admin/AdminCenters";
+import AdminAppointments from "./pages/admin/AdminAppointments";
+
+
+
+
 const queryClient = new QueryClient();
 
 export default function App() {
@@ -75,6 +80,8 @@ export default function App() {
               <Route path="donors/register" element={<DonorRegister />} />
               <Route path="donors/counseling" element={<DonorCounseling />} />
               <Route path="centers" element={<AdminCenters />} />
+              <Route path="appointments" element={<AdminAppointments />} />
+          
             </Route>
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -29,53 +29,62 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-900">
-        <form
+    <div className="flex items-center justify-center min-h-screen bg-black">
+      <form
         onSubmit={handleLogin}
-        className="bg-gray-800 text-white p-10 rounded-2xl shadow-2xl w-96 border border-gray-700"
-        >
+        className="bg-black p-10 rounded-2xl shadow-2xl w-96 border border-red-700 relative overflow-hidden"
+      >
+        {/* Decorative elements */}
+        <div className="absolute -top-16 -left-16 w-32 h-32 bg-red-600 rounded-full opacity-20 blur-xl"></div>
+        <div className="absolute -bottom-16 -right-16 w-32 h-32 bg-red-600 rounded-full opacity-20 blur-xl"></div>
+        
         {/* Title */}
-        <h2 className="text-3xl font-bold mb-8 text-center text-red-500">
-            Admin Login
+        <h2 className="text-3xl font-bold mb-8 text-center text-red-600 relative z-10">
+          ADMIN ACCESS
         </h2>
 
         {/* Error Message */}
         {error && (
-            <p className="text-red-400 text-sm mb-4 text-center">{error}</p>
+          <div className="mb-4 p-3 bg-red-900/30 border border-red-700 rounded-lg">
+            <p className="text-red-400 text-sm text-center">{error}</p>
+          </div>
         )}
 
         {/* Username */}
-        <div className="mb-5">
-            <input
+        <div className="mb-5 relative z-10">
+          <input
             type="text"
             placeholder="Username"
-            className="w-full bg-black border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 transition"
+            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent transition"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            />
+          />
         </div>
 
         {/* Password */}
-        <div className="mb-6">
-            <input
+        <div className="mb-6 relative z-10">
+          <input
             type="password"
             placeholder="Password"
-            className="w-full bg-black border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 transition"
+            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent transition"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            />
+          />
         </div>
 
         {/* Login Button */}
         <button
-            type="submit"
-            className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition duration-200"
+          type="submit"
+          className="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-3 rounded-lg transition duration-200 relative z-10 transform hover:scale-[1.02] active:scale-[0.98]"
         >
-            Login
+          ACCESS SYSTEM
         </button>
-        </form>
+        
+        {/* Footer note */}
+        <p className="text-xs text-gray-500 text-center mt-6 relative z-10">
+          Restricted administrative access only
+        </p>
+      </form>
     </div>
-    );
-
-
+  );
 }

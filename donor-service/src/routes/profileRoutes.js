@@ -2,12 +2,21 @@
 const express = require("express");
 const router = express.Router();
 const { getProfile, updateProfile } = require("../controllers/profileController");
-const authenticateToken = require("../middlewares/authMiddleware");
+const { requireAuth } = require("../middlewares/authMiddleware"); // <- destructure
 
-// Get user profile + dropdown options
-router.get("/profile", authenticateToken, getProfile);
+const profileUpdateValidators = require("../validators/profileValidators");
+const handleValidationErrors = require("../validators/handleValidationErrors");
 
-// Update user profile
-router.patch("/profile", authenticateToken, updateProfile);
+// Get user profile
+router.get("/profile", requireAuth, getProfile);
+
+// Update user profile (partial updates allowed)
+router.patch(
+  "/profile",
+  requireAuth,
+  profileUpdateValidators,
+  handleValidationErrors,
+  updateProfile
+);
 
 module.exports = router;

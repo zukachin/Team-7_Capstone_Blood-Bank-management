@@ -1,48 +1,25 @@
-const jwt = require("jsonwebtoken");
+// src/middlewares/authMiddleware.js
+require('dotenv').config();
+const jwt = require('jsonwebtoken');
 
-module.exports = function (req, res, next) {
-  const authHeader = req.headers["authorization"];
-  console.log("👉 Raw Authorization Header:", authHeader);
-
-  if (!authHeader) return res.status(401).json({ message: "Access denied. No token." });
-
-  const token = authHeader.split(" ")[1];
-  console.log("👉 Extracted Token:", token);
+function requireAuth(req, res, next) {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (!token) return res.status(401).json({ message: 'Unauthorized: No token provided' });
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("👉 Decoded Token:", decoded);
-    req.user = decoded;
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    // STANDARDIZE: attach userId property so controllers can read req.user.userId
+    req.user = { userId: payload.userId ?? payload.id ?? payload.sub };
+    // if no userId found, reject
+    if (!req.user.userId) {
+      return res.status(401).json({ message: 'Unauthorized: No user in token' });
+    }
     next();
   } catch (err) {
-    console.error("👉 JWT Verification Error:", err.message);
-    return res.status(403).json({ message: "Invalid or expired token." });
+    console.error("requireAuth verify error:", err && err.message);
+    return res.status(401).json({ message: 'Invalid or expired token' });
   }
-};
+}
 
-// middleware/authMiddleware.js
-// const jwt = require("jsonwebtoken");
-
-// module.exports = (req, res, next) => {
-//   const authHeader = req.headers["authorization"];
-//   if (!authHeader) {
-//     return res.status(401).json({ message: "Access denied. No token." });
-//   }
-
-//   const token = authHeader.split(" ")[1];
-//   if (!token) {
-//     return res.status(401).json({ message: "Access denied. Invalid token." });
-//   }
-
-//   try {
-//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-//     // 🔥 Normalize so controllers can keep using req.user.id
-//     req.user = { id: decoded.userId, email: decoded.email };
-
-//     next();
-//   } catch (err) {
-//     console.error("JWT verification error:", err.message);
-//     res.status(401).json({ message: "Invalid or expired token." });
-//   }
-// };
+module.exports = { requireAuth };

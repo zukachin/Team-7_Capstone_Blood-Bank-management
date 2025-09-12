@@ -1,149 +1,128 @@
 // src/controllers/profileController.js
-const { pool } = require("../db/pool");
+const pool = require("../db/pool");
 
-// GET /profile
-// exports.getProfile = async (req, res) => {
-//   try {
-//     const userId = req.user.id; // from JWT middleware
-//     const result = await pool.query(
-//       `SELECT id, email, first_name, last_name, phone, address, city, state, pincode, blood_group_id, district_id, gender 
-//        FROM users WHERE id=$1`,
-//       [userId]
-//     );
-
-//     if (!result.rows.length) {
-//       return res.status(404).json({ message: "User not found" });
-//     }
-
-//     res.json(result.rows[0]);
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
-
-
-//option-2
+/**
+ * GET /profile
+ * Returns user info joined with blood group name (if any)
+ */
 exports.getProfile = async (req, res) => {
   try {
-    // Extract correct field
-    const userId = req.user.userId;
+    const userId = req.user && req.user.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized: No user in token" });
 
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized: No user in token" });
-    }
+    const q = `
+      SELECT u.id, u.name, u.email, u.phone, u.address, u.age, u.gender, u.is_verified,
+             bg.id as blood_group_id, bg.group_name as blood_group,
+             u.created_at, u.updated_at
+      FROM users u
+      LEFT JOIN blood_groups bg ON u.blood_group_id = bg.id
+      WHERE u.id = $1
+      LIMIT 1
+    `;
+    const result = await pool.query(q, [userId]);
 
-    const result = await pool.query(
-      "SELECT id, name, email, is_verified FROM users WHERE id=$1",
-      [userId]
-    );
-
-    if (!result.rows.length) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    if (!result.rows.length) return res.status(404).json({ message: "User not found" });
 
     res.json(result.rows[0]);
   } catch (err) {
-    console.error("👉 Profile error:", err.message);
+    console.error("👉 Profile error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-
-// PATCH /profile
-// exports.updateProfile = async (req, res) => {
-//   try {
-//     const userId = req.user.id;
-//     const {
-//       first_name,
-//       last_name,
-//       phone,
-//       street,
-//       city,
-//       state,
-//       pincode,
-//       blood_group_id,
-//       district_id,
-//       gender,
-//     } = req.body;
-
-//     const result = await pool.query(
-//       `UPDATE users
-//        SET name=$1, phone=$2, street=$3, city=$4, state=$5, pincode=$6,
-//            blood_group_id=$7, district_id=$8, gender=$9
-//        WHERE id=$10
-//        RETURNING id`,
-//       [
-//         `${first_name} ${last_name}`,
-//         phone,
-//         street,
-//         city,
-//         state,
-//         pincode,
-//         blood_group_id,
-//         district_id,
-//         gender,
-//         userId,
-//       ]
-//     );
-
-//     if (!result.rows.length) {
-//       return res.status(404).json({ message: "User not found" });
-//     }
-
-//     res.json({ message: "Profile updated successfully" });
-//   } catch (err) {
-//     console.error("Update profile error:", err);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
-
+/**
+ * PATCH /profile
+ * Accepts partial updates. Only allows an explicit set of fields.
+ * Builds a dynamic SET clause safely using parameterized queries.
+ */
 exports.updateProfile = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user && req.user.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized: No user in token" });
 
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized: No user in token" });
+    // Whitelist of fields that can be updated via profile page
+    const allowedFields = [
+      "name",
+      "email",
+      "phone",
+      "address",
+      "age",
+      "gender",
+      "blood_group_id" // expects integer id referencing blood_groups
+    ];
+
+    // Filter incoming body by allowed fields only
+    const updates = Object.keys(req.body || {}).filter((k) => allowedFields.includes(k));
+
+    if (!updates.length) {
+      return res.status(400).json({ message: "No valid fields provided for update." });
     }
 
-    const { name } = req.body;
+    // If email change requested -> ensure uniqueness
+    if (req.body.email) {
+      const exists = await pool.query(
+        "SELECT id FROM users WHERE email = $1 AND id <> $2 LIMIT 1",
+        [req.body.email, userId]
+      );
+      if (exists.rows.length) {
+        return res.status(409).json({ message: "Email already in use" });
+      }
+    }
 
-    const result = await pool.query(
-      "UPDATE users SET name=$1 WHERE id=$2 RETURNING id, name, email, is_verified",
-      [name, userId]
-    );
+    // If blood_group_id provided -> ensure it exists
+    if (req.body.blood_group_id !== undefined && req.body.blood_group_id !== null) {
+      const bgId = parseInt(req.body.blood_group_id, 10);
+      if (Number.isNaN(bgId)) {
+        return res.status(400).json({ message: "blood_group_id must be an integer" });
+      }
+      const bgRes = await pool.query("SELECT id FROM blood_groups WHERE id = $1 LIMIT 1", [bgId]);
+      if (!bgRes.rows.length) {
+        return res.status(400).json({ message: "Invalid blood_group_id" });
+      }
+    }
 
-    if (!result.rows.length) {
+    // Build SET clause and values array
+    const setClauses = [];
+    const values = [];
+    let idx = 1;
+    for (const field of updates) {
+      setClauses.push(`${field} = $${idx}`);
+      values.push(req.body[field]);
+      idx++;
+    }
+
+    // Add updated_at
+    setClauses.push(`updated_at = NOW()`);
+
+    const query = `
+      UPDATE users
+      SET ${setClauses.join(", ")}
+      WHERE id = $${idx}
+      RETURNING id, name, email, phone, address, age, gender, is_verified, blood_group_id, created_at, updated_at
+    `;
+    values.push(userId);
+
+    const updateRes = await pool.query(query, values);
+
+    if (!updateRes.rows.length) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.json(result.rows[0]);
+    // Return full profile with blood group name
+    const respQ = `
+      SELECT u.id, u.name, u.email, u.phone, u.address, u.age, u.gender, u.is_verified,
+             bg.id as blood_group_id, bg.group_name as blood_group,
+             u.created_at, u.updated_at
+      FROM users u
+      LEFT JOIN blood_groups bg ON u.blood_group_id = bg.id
+      WHERE u.id = $1
+      LIMIT 1
+    `;
+    const finalRes = await pool.query(respQ, [userId]);
+
+    res.json(finalRes.rows[0]);
   } catch (err) {
-    console.error("👉 Update profile error:", err.message);
+    console.error("👉 Update profile error:", err);
     res.status(500).json({ message: "Server error" });
   }
-
-  // try {
-  //   const userId = req.user.id;
-  //   const updates = req.body; // 👈 may contain only partial fields
-
-  //   // Build dynamic SQL
-  //   const fields = Object.keys(updates);
-  //   const values = Object.values(updates);
-
-  //   if (fields.length === 0) {
-  //     return res.status(400).json({ message: "No fields to update" });
-  //   }
-
-  //   const setClause = fields.map((f, i) => `${f} = $${i + 1}`).join(", ");
-  //   const query = `UPDATE users SET ${setClause} WHERE id = $${fields.length + 1}`;
-
-  //   await pool.query(query, [...values, userId]);
-
-  //   res.json({ message: "Profile updated successfully" });
-  // } catch (err) {
-  //   console.error("Update profile error:", err);
-  //   res.status(500).json({ message: "Server error" });
-  // }
 };
-

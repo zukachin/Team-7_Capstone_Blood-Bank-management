@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { Search, RefreshCw, Users, Droplet, User, Activity, Calendar, Award, Download, MapPin, Phone, Mail, Star, Trophy, Heart } from "lucide-react";
+import { Search, RefreshCw, Users, Droplet, User, Activity, Calendar, Award, Download, MapPin, Phone, Mail, Star, Trophy, Heart, X } from "lucide-react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -16,6 +16,7 @@ const UserBloodDashboard = () => {
   const [achievements, setAchievements] = useState([]);
   const [certificates, setCertificates] = useState([]);
   const [nextEligibleDate, setNextEligibleDate] = useState("");
+  const [scheduledAppointments, setScheduledAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCertificate, setShowCertificate] = useState(null);
   
@@ -25,6 +26,7 @@ const UserBloodDashboard = () => {
   const statsRef = useRef(null);
   const profileRef = useRef(null);
   const eligibilityRef = useRef(null);
+  const appointmentsRef = useRef(null);
   const achievementsRef = useRef(null);
   const historyRef = useRef(null);
   const footerRef = useRef(null);
@@ -74,6 +76,18 @@ const UserBloodDashboard = () => {
           { id: 5, title: "Community Champion", description: "Donate for 2+ years", icon: "users", earned: true, date: "2025-01-15" }
         ]);
       }, 400);
+    });
+  };
+
+  const fetchScheduledAppointments = async () => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve([
+          { id: 1, date: "2025-09-25", time: "10:00 AM", hospital: "City General Hospital", status: "Confirmed" },
+          { id: 2, date: "2025-10-15", time: "2:30 PM", hospital: "St. Mary's Medical Center", status: "Confirmed" },
+          { id: 3, date: "2025-11-05", time: "11:15 AM", hospital: "Regional Medical Center", status: "Pending" }
+        ]);
+      }, 500);
     });
   };
 
@@ -152,6 +166,23 @@ const UserBloodDashboard = () => {
         }
       );
 
+      // Appointments animation
+      const appointmentCards = appointmentsRef.current.children;
+      gsap.fromTo(appointmentCards, 
+        { y: 50, opacity: 0 },
+        { 
+          y: 0, 
+          opacity: 1, 
+          duration: 0.6, 
+          stagger: 0.1,
+          scrollTrigger: {
+            trigger: appointmentsRef.current,
+            start: "top 75%",
+            toggleActions: "play none none none"
+          }
+        }
+      );
+
       // Achievements animation
       const achievementCards = achievementsRef.current.children;
       gsap.fromTo(achievementCards, 
@@ -208,16 +239,18 @@ const UserBloodDashboard = () => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const [profile, history, achievementsData, trends] = await Promise.all([
+        const [profile, history, achievementsData, appointments, trends] = await Promise.all([
           fetchUserProfile(),
           fetchDonationHistory(),
           fetchAchievements(),
+          fetchScheduledAppointments(),
           fetchDonationTrends()
         ]);
         
         setUserProfile(profile);
         setDonationHistory(history);
         setAchievements(achievementsData);
+        setScheduledAppointments(appointments);
         
         // Calculate next eligible date (3 months after last donation)
         const lastDonationDate = new Date(profile.lastDonation);
@@ -277,6 +310,44 @@ const UserBloodDashboard = () => {
       setShowCertificate(null);
     }
   };
+
+const cancelAppointment = async (appointmentId) => {
+  try {
+    // First: API call to cancel in database
+    const response = await fetch(`/api/appointments/${appointmentId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        // Add authentication token if needed
+        // 'Authorization': `Bearer ${userToken}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to cancel appointment');
+    }
+
+    // Only remove from local state if database operation succeeded
+    const appointmentCard = document.getElementById(`appointment-${appointmentId}`);
+    if (appointmentCard) {
+      gsap.to(appointmentCard, {
+        opacity: 0,
+        height: 0,
+        duration: 0.5,
+        onComplete: () => {
+          setScheduledAppointments(prev => 
+            prev.filter(appointment => appointment.id !== appointmentId)
+          );
+        }
+      });
+    }
+    
+  } catch (error) {
+    console.error("Error cancelling appointment:", error);
+    // Show error message to user
+    alert("Failed to cancel appointment. Please try again.");
+  }
+};
 
   const getAchievementIcon = (iconType) => {
     switch(iconType) {
@@ -471,6 +542,60 @@ const UserBloodDashboard = () => {
                 Schedule Appointment
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* Scheduled Appointments Section */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-semibold text-white mb-6">Your Scheduled Appointments</h2>
+          <div ref={appointmentsRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {scheduledAppointments.map((appointment) => (
+              <div 
+                key={appointment.id} 
+                id={`appointment-${appointment.id}`}
+                className="bg-gray-900 bg-opacity-50 rounded-2xl p-6 border border-gray-800 hover:border-gray-700 transition-colors"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-red-400" />
+                    <span className={`text-sm font-medium px-2 py-1 rounded-full ${
+                      appointment.status === 'Confirmed' 
+                        ? 'bg-green-900 bg-opacity-30 text-green-400' 
+                        : 'bg-yellow-900 bg-opacity-30 text-yellow-400'
+                    }`}>
+                      {appointment.status}
+                    </span>
+                  </div>
+                  <button 
+                    onClick={() => cancelAppointment(appointment.id)}
+                    className="text-gray-400 hover:text-red-400 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                <div className="mb-4">
+                  <h3 className="text-xl font-bold text-white mb-1">{appointment.hospital}</h3>
+                  <p className="text-gray-400 text-sm">{appointment.date} at {appointment.time}</p>
+                </div>
+                
+                <div className="flex gap-2">
+                  <button className="flex-1 bg-red-700 hover:bg-red-700 text-white py-2 px-4 rounded-lg text-sm transition-colors">
+                    Reschedule
+                  </button>
+                </div>
+              </div>
+            ))}
+            
+            {scheduledAppointments.length === 0 && (
+              <div className="col-span-full text-center py-8 text-gray-400">
+                <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>You don't have any scheduled appointments.</p>
+                <button className="mt-4 bg-red-600 hover:bg-red-700 text-white py-2 px-6 rounded-lg transition-colors">
+                  Schedule Your First Appointment
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

@@ -1,3 +1,4 @@
+// client/pages/Signup.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
@@ -11,11 +12,13 @@ export default function SignUp() {
     name: "",
     email: "",
     phone: "",
-    street: "",
-    city: "",
-    state: "",
-    pincode: "",
     password: "",
+    age: "",
+    gender: "",
+    state_id: "",
+    district_id: "",
+    blood_group_id: "",
+    address: "",
   });
 
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -25,17 +28,21 @@ export default function SignUp() {
     setErr("");
     setLoading(true);
     try {
-      const { userId } = await api.register({
+      const res = await api.register({
         name: form.name,
         email: form.email,
         phone: form.phone,
-        street: form.street,
-        city: form.city,
-        state: form.state,
-        pincode: form.pincode,
         password: form.password,
+        age: parseInt(form.age, 10),
+        gender: form.gender,
+        state_id: parseInt(form.state_id, 10),
+        district_id: parseInt(form.district_id, 10),
+        blood_group_id: parseInt(form.blood_group_id, 10),
+        address: form.address,
+        is_verified: false, // default until OTP
       });
-      navigate(`/verify-otp?userId=${encodeURIComponent(userId)}&email=${encodeURIComponent(form.email)}`);
+
+      navigate(`/verify-otp?email=${encodeURIComponent(form.email)}`);
     } catch (error) {
       setErr(error.message || "Failed to register");
     } finally {
@@ -97,12 +104,13 @@ export default function SignUp() {
               </div>
 
               <div>
-                <label className="block text-white mb-2">Street / Address</label>
+                <label className="block text-white mb-2">Password</label>
                 <input
-                  name="street"
-                  value={form.street}
+                  type="password"
+                  name="password"
+                  value={form.password}
                   onChange={onChange}
-                  placeholder="Enter street"
+                  placeholder="Create password"
                   className="w-full bg-transparent border-b border-gray-600 py-2 focus:border-red-500 focus:outline-none"
                   required
                 />
@@ -112,50 +120,80 @@ export default function SignUp() {
             {/* Right column */}
             <div className="space-y-6">
               <div>
-                <label className="block text-white mb-2">City</label>
+                <label className="block text-white mb-2">Age</label>
                 <input
-                  name="city"
-                  value={form.city}
+                  type="number"
+                  name="age"
+                  value={form.age}
                   onChange={onChange}
-                  placeholder="Enter city"
+                  placeholder="Enter age"
                   className="w-full bg-transparent border-b border-gray-600 py-2 focus:border-red-500 focus:outline-none"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-white mb-2">State</label>
-                <input
-                  name="state"
-                  value={form.state}
+                <label className="block text-white mb-2">Gender</label>
+                <select
+                  name="gender"
+                  value={form.gender}
                   onChange={onChange}
-                  placeholder="Enter state"
+                  className="w-full bg-transparent border-b border-gray-600 py-2 focus:border-red-500 focus:outline-none"
+                  required
+                >
+                  <option value="">Select gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-white mb-2">State ID</label>
+                <input
+                  type="number"
+                  name="state_id"
+                  value={form.state_id}
+                  onChange={onChange}
+                  placeholder="Enter state ID"
                   className="w-full bg-transparent border-b border-gray-600 py-2 focus:border-red-500 focus:outline-none"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-white mb-2">Pincode</label>
+                <label className="block text-white mb-2">District ID</label>
                 <input
-                  name="pincode"
-                  value={form.pincode}
+                  type="number"
+                  name="district_id"
+                  value={form.district_id}
                   onChange={onChange}
-                  placeholder="Enter pincode"
+                  placeholder="Enter district ID"
                   className="w-full bg-transparent border-b border-gray-600 py-2 focus:border-red-500 focus:outline-none"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-white mb-2">Password</label>
+                <label className="block text-white mb-2">Blood Group ID</label>
                 <input
-                  type="password"
-                  name="password"
-                  value={form.password}
+                  type="number"
+                  name="blood_group_id"
+                  value={form.blood_group_id}
                   onChange={onChange}
-                  placeholder="Create password"
+                  placeholder="Enter blood group ID"
                   className="w-full bg-transparent border-b border-gray-600 py-2 focus:border-red-500 focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-white mb-2">Address</label>
+                <textarea
+                  name="address"
+                  value={form.address}
+                  onChange={onChange}
+                  placeholder="Enter full address"
+                  className="w-full bg-transparent border border-gray-600 rounded-md py-2 focus:border-red-500 focus:outline-none"
                   required
                 />
               </div>

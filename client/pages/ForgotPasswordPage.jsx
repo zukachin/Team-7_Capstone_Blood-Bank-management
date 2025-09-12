@@ -1,67 +1,93 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; 
-
-
-
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { api } from "../lib/api";
 
 const ForgotPasswordPage = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1); // 1 = forget step, 2 = reset step
+  const [step, setStep] = useState(1); // 1 = forgot step, 2 = reset step
   const [formData, setFormData] = useState({
-    email: '',
-    otp: '',
-    newPassword: ''
+    email: "",
+    otp: "",
+    newPassword: "",
   });
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+  const [msg, setMsg] = useState("");
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
-  const handleSendOTP = () => {
+  const handleSendOTP = async () => {
     if (!formData.email) {
-      alert('Please enter your email');
+      setErr("Please enter your email");
       return;
     }
-    console.log('Sending OTP to:', formData.email);
-    setStep(2);
-    // API call to send OTP
+    setErr("");
+    setMsg("");
+    setLoading(true);
+    try {
+      await api.forgotPassword({ email: formData.email });
+      setMsg("OTP sent to your email.");
+      setStep(2);
+    } catch (error) {
+      setErr(error.message || "Failed to send OTP");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSubmitReset = () => {
+  const handleSubmitReset = async () => {
     if (!formData.otp || !formData.newPassword) {
-      alert('Please fill in all fields');
+      setErr("Please fill in all fields");
       return;
     }
-    console.log('Resetting password:', formData);
-    // API call to verify OTP and reset password
-    // On success, navigate back to login page
-    alert('Password reset successful! Redirecting to login...');
+    setErr("");
+    setMsg("");
+    setLoading(true);
+    try {
+      await api.resetPassword({
+        email: formData.email,
+        otp: formData.otp,
+        newPassword: formData.newPassword,
+      });
+      setMsg("Password reset successful! Redirecting to login...");
+      setTimeout(() => navigate("/login"), 1200);
+    } catch (error) {
+      setErr(error.message || "Password reset failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleBackToLogin = () => {
-    navigate('/login');
-    console.log('Navigate back to login page');
-  };
-
-  const handleBackToHome = () => {
-    navigate('/');
-    console.log('Navigate back to home');
-  };
+  const handleBackToLogin = () => navigate("/login");
+  const handleBackToHome = () => navigate("/");
 
   return (
     <div className="min-h-screen bg-black text-white">
       <div className="flex items-center justify-center min-h-screen px-6">
         <div className="w-full max-w-md">
           <h1 className="text-5xl font-bold mb-12 text-center">
-            {step === 1 ? 'Forgot Password' : 'Reset Password'}
+            {step === 1 ? "Forgot Password" : "Reset Password"}
           </h1>
-          
+
+          {err && (
+            <div className="text-red-400 text-sm text-center mb-4">
+              {err}
+            </div>
+          )}
+          {msg && (
+            <div className="text-green-400 text-sm text-center mb-4">
+              {msg}
+            </div>
+          )}
+
           {step === 1 ? (
-            // Step 1: Forget Password
+            // Step 1: Forgot Password
             <div className="space-y-8">
               <div>
                 <label className="block text-white text-lg mb-2">Email:</label>
@@ -78,9 +104,10 @@ const ForgotPasswordPage = () => {
               <div className="pt-6">
                 <button
                   onClick={handleSendOTP}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-lg transition-colors duration-200 text-lg"
+                  disabled={loading}
+                  className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white font-bold py-4 px-6 rounded-lg transition-colors duration-200 text-lg"
                 >
-                  Send OTP
+                  {loading ? "Sending OTP..." : "Send OTP"}
                 </button>
               </div>
             </div>
@@ -93,10 +120,8 @@ const ForgotPasswordPage = () => {
                   type="email"
                   name="email"
                   value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full bg-transparent border-b border-gray-600 py-3 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors text-lg"
                   readOnly
-                  style={{ opacity: 0.7 }}
+                  className="w-full bg-transparent border-b border-gray-600 py-3 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none transition-colors text-lg opacity-70"
                 />
               </div>
 
@@ -115,7 +140,9 @@ const ForgotPasswordPage = () => {
               </div>
 
               <div>
-                <label className="block text-white text-lg mb-2">New Password:</label>
+                <label className="block text-white text-lg mb-2">
+                  New Password:
+                </label>
                 <input
                   type="password"
                   name="newPassword"
@@ -129,9 +156,10 @@ const ForgotPasswordPage = () => {
               <div className="pt-6">
                 <button
                   onClick={handleSubmitReset}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-lg transition-colors duration-200 text-lg"
+                  disabled={loading}
+                  className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white font-bold py-4 px-6 rounded-lg transition-colors duration-200 text-lg"
                 >
-                  Submit
+                  {loading ? "Resetting..." : "Submit"}
                 </button>
               </div>
             </div>
@@ -145,7 +173,7 @@ const ForgotPasswordPage = () => {
             >
               Back to Login
             </button>
-            
+
             <button
               onClick={handleBackToHome}
               className="text-white hover:text-red-400 transition-colors text-lg font-medium"

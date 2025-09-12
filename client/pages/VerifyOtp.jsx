@@ -10,17 +10,18 @@ export default function VerifyOtp() {
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
 
-  // userId/email can arrive via query params (from signup)
-  const userId = useMemo(() => params.get("userId") || "", [params]);
+  // email arrives via query params (from signup)
   const email = useMemo(() => params.get("email") || "", [params]);
 
   const onVerify = async (e) => {
     e.preventDefault();
-    setErr(""); setMsg(""); setLoading(true);
+    setErr("");
+    setMsg("");
+    setLoading(true);
     try {
-      await api.verifyOtp({ userId, otp });
+      await api.verifyOtp({ email, otp });
       setMsg("Email verified! You can login now.");
-      setTimeout(() => navigate("/login"), 800);
+      setTimeout(() => navigate("/login"), 1000);
     } catch (error) {
       setErr(error.message || "Invalid OTP");
     } finally {
@@ -29,9 +30,11 @@ export default function VerifyOtp() {
   };
 
   const onResend = async () => {
-    setErr(""); setMsg(""); setLoading(true);
+    setErr("");
+    setMsg("");
+    setLoading(true);
     try {
-      await api.resendOtp(userId);
+      await api.resendOtp({ email });
       setMsg("OTP resent to your email.");
     } catch (error) {
       setErr(error.message || "Failed to resend OTP");
@@ -44,9 +47,17 @@ export default function VerifyOtp() {
     <div className="min-h-screen bg-black text-white">
       <div className="max-w-lg mx-auto px-6 py-16">
         <h1 className="text-3xl font-bold mb-4">Verify your email</h1>
-        {email && <p className="text-gray-400 mb-6">We sent a 6-digit code to <span className="text-white">{email}</span></p>}
+        {email && (
+          <p className="text-gray-400 mb-6">
+            We sent a 6-digit code to{" "}
+            <span className="text-white">{email}</span>
+          </p>
+        )}
 
-        <form onSubmit={onVerify} className="bg-gray-900/40 border border-gray-800 rounded-2xl p-6 space-y-4">
+        <form
+          onSubmit={onVerify}
+          className="bg-gray-900/40 border border-gray-800 rounded-2xl p-6 space-y-4"
+        >
           {err && <div className="text-red-400 text-sm">{err}</div>}
           {msg && <div className="text-green-400 text-sm">{msg}</div>}
 
@@ -60,10 +71,19 @@ export default function VerifyOtp() {
           />
 
           <div className="flex items-center gap-3">
-            <button type="submit" disabled={loading} className="bg-red-600 hover:bg-red-700 disabled:opacity-60 px-6 py-2 rounded-lg">
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-red-600 hover:bg-red-700 disabled:opacity-60 px-6 py-2 rounded-lg"
+            >
               {loading ? "Verifying..." : "Verify"}
             </button>
-            <button type="button" onClick={onResend} disabled={loading} className="border border-gray-700 hover:border-red-500 px-6 py-2 rounded-lg">
+            <button
+              type="button"
+              onClick={onResend}
+              disabled={loading}
+              className="border border-gray-700 hover:border-red-500 px-6 py-2 rounded-lg"
+            >
               Resend OTP
             </button>
           </div>

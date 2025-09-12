@@ -239,6 +239,7 @@ export function Header() {
               <div className="absolute left-0 mt-0 hidden group-hover:block bg-black border border-gray-800 rounded-md shadow-lg z-50 min-w-[14rem]">
                 <Link to="/register-donor" className="block px-4 py-2 hover:bg-gray-900">Register as Donor</Link>
                 <Link to="/donation-camps" className="block px-4 py-2 hover:bg-gray-900">Blood Donation Camps</Link>
+                <Link to="/camp-registration" className="block px-4 py-2 hover:bg-gray-900">Register a Camp</Link>
               </div>
             </div>
 

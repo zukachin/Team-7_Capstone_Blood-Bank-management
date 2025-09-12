@@ -79,6 +79,26 @@ const otpRules = body('otp')
   .isLength({ min: 4, max: 8 }).withMessage('OTP must be 4-8 digits')
   .matches(/^\d+$/).withMessage('OTP must be numeric');
 
+// age: must be integer >= 18
+const ageRules = body('age')
+  .exists({ checkFalsy: true }).withMessage('Age is required')
+  .bail()
+  .isInt({ min: 18 }).withMessage('You must be at least 18 years old');
+
+// blood_group: validate against blood_groups table
+const bloodGroupRules = body('blood_group_id')
+  .exists({ checkFalsy: true }).withMessage('blood_group is required')
+  .bail()
+  .isInt().withMessage('blood_group must be an integer id')
+  .bail()
+  .custom(async (bgId) => {
+    const q = 'SELECT id FROM blood_groups WHERE id = $1 LIMIT 1';
+    const r = await pool.query(q, [Number(bgId)]);
+    if (!r.rowCount) throw new Error('Invalid blood group id');
+    return true;
+  });
+
+
 const handleValidation = (req, res, next) => {
   const errors = validationResult(req);
   if (errors.isEmpty()) return next();
@@ -89,6 +109,14 @@ const handleValidation = (req, res, next) => {
   });
 
   return res.status(400).json({ message: 'Validation failed', errors: formatted });
+  
+
+
+
+
+
+
+
 };
 
 module.exports = {
@@ -101,5 +129,7 @@ module.exports = {
   districtIdRules,
   addressRules,
   otpRules,
+  ageRules,
+  bloodGroupRules,
   handleValidation
 };

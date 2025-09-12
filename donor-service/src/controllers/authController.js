@@ -34,46 +34,85 @@ async function createAndSendOtpForUser(userId, email) {
 // controllers/authController.js (excerpt - updated register)
 
 // ... other imports
-
-async function register(req, res) {
+// Replace the existing `register` function with this
+async function register (req, res) {
   try {
     const {
       name, email, password, phone,
-      gender, state_id, district_id, address
+      gender, state_id, district_id, address,
+      age, blood_group_id // blood_group expected as integer id
     } = req.body || {};
 
-    const emailNorm = email.toLowerCase().trim();
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'name, email and password are required' });
+    }
 
-    // check if user exists
-    const q = 'SELECT id, is_verified FROM users WHERE email = $1';
-    const r = await pool.query(q, [emailNorm]);
+    // Defensive checks (validators already run but keep server-side safe)
+    const ageInt = Number(age);
+    if (!Number.isInteger(ageInt) || ageInt < 18) {
+      return res.status(400).json({ message: 'Age must be integer >= 18' });
+    }
 
+    // verify blood_group id exists (defensive)
+    const bgRes = await pool.query(
+      'SELECT id FROM blood_groups WHERE id = $1 LIMIT 1',
+      [Number(blood_group_id)]
+    );
+    if (!bgRes.rowCount) {
+      return res.status(400).json({ message: 'Invalid blood_group id' });
+    }
+
+    const emailNorm = String(email).toLowerCase().trim();
+
+    // check existing user
+    const existing = await pool.query('SELECT id, is_verified FROM users WHERE email = $1 LIMIT 1', [emailNorm]);
     const hashed = await bcrypt.hash(password, SALT_ROUNDS);
 
-    if (r.rows.length) {
-      const user = r.rows[0];
+    if (existing.rowCount) {
+      const user = existing.rows[0];
       if (user.is_verified) {
-        return res.status(400).json({ message: 'Email already registered and verified. Please login.', errors: { email: 'Email already in use' }});
+        return res.status(409).json({ message: 'Email already registered. Please login.' });
       }
-
-      // update user info (store state_id & district_id)
+      // update unverified user
       await pool.query(
-        `UPDATE users SET name=$1, password=$2, phone=$3, gender=$4, state_id=$5, district_id=$6, address=$7 WHERE id=$8`,
-        [name.trim(), hashed, phone || null, gender || null, state_id || null, district_id || null, address || null, user.id]
+        `UPDATE users
+         SET name=$1, password=$2, phone=$3, gender=$4, state_id=$5, district_id=$6, address=$7, age=$8, blood_group_id=$9, updated_at=now()
+         WHERE id=$10`,
+        [
+          name.trim(),
+          hashed,
+          phone || null,
+          gender || null,
+          state_id || null,
+          district_id || null,
+          address || null,
+          ageInt,
+          Number(blood_group_id),
+          user.id
+        ]
       );
 
       await createAndSendOtpForUser(user.id, emailNorm);
       return res.status(200).json({ message: 'Account exists but not verified. OTP sent.', email: emailNorm });
     }
 
-    // insert new user with FK ids
+    // insert new user with FK ids (note: pass blood_group_id param)
     const insertQ = `
-      INSERT INTO users (name, email, password, phone, gender, state_id, district_id, address, is_verified)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,false)
+      INSERT INTO users (name, email, password, phone, gender, state_id, district_id, address, age, blood_group_id, is_verified)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,false)
       RETURNING id, name, email
     `;
     const result = await pool.query(insertQ, [
-      name.trim(), emailNorm, hashed, phone || null, gender || null, state_id || null, district_id || null, address || null
+      name.trim(),
+      emailNorm,
+      hashed,
+      phone || null,
+      gender || null,
+      state_id || null,
+      district_id || null,
+      address || null,
+      ageInt,
+      Number(blood_group_id)
     ]);
     const newUser = result.rows[0];
 

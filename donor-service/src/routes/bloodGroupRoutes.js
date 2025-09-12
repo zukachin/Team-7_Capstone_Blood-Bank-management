@@ -9,6 +9,6 @@ const { listBloodGroups } = require("../controllers/bloodGroupController");
 const { requireAuth } = require("../middlewares/authMiddleware");
 
 // Read-only: get blood groups for dropdown
-router.get("/blood-groups", requireAuth, listBloodGroups);
+router.get("/blood-groups",listBloodGroups);
 
 module.exports = router;

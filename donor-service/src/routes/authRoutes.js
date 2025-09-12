@@ -42,7 +42,9 @@ router.post(
     validators.genderRules,
     validators.stateIdRules,
     validators.districtIdRules,
-    validators.addressRules
+    validators.addressRules,
+    validators.ageRules,
+    validators.bloodGroupRules
   ],
   validators.handleValidation,
   authController.register

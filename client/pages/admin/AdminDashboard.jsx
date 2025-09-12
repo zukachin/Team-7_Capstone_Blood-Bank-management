@@ -8,6 +8,7 @@ export default function AdminDashboard() {
   const links = [
     { path: "/admin/donors/register", label: "Donor Register", icon: <Users size={18} /> },
     { path: "/admin/donors/counseling", label: "Donor Counseling", icon: <MessageSquare size={18} /> },
+    { path: "/admin/centers", label: "Manage Centres", icon: <Home size={18} /> }
   ];
 
   return (

@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-
 const baseUrl = import.meta.env.VITE_API_BASE_URL;
 const RegisterDonor = () => {
   const navigate = useNavigate();
@@ -23,6 +22,8 @@ const RegisterDonor = () => {
     lastDonationDate: '',
     medicalIssues: '',
     weight: '',
+    appointmentDate: '',
+    appointmentTime: '',
     consent: false,
   });
 
@@ -113,6 +114,8 @@ const RegisterDonor = () => {
         lastDonationDate: '',
         medicalIssues: '',
         weight: '',
+        appointmentDate: '',
+        appointmentTime: '',
         consent: false,
       });
     } catch (err) {
@@ -191,6 +194,35 @@ const RegisterDonor = () => {
 
             <InputField label="Date of Birth" name="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={handleInputChange} />
             <InputField label="Last Donation Date (if any)" name="lastDonationDate" type="date" value={formData.lastDonationDate} onChange={handleInputChange} />
+            
+            {/* Appointment Date */}
+            <InputField 
+              label="Appointment Date" 
+              name="appointmentDate" 
+              type="date" 
+              value={formData.appointmentDate} 
+              onChange={handleInputChange} 
+              min={new Date().toISOString().split('T')[0]} // Set min to today
+            />
+            
+            {/* Appointment Time */}
+            <SelectField
+              label="Appointment Time"
+              name="appointmentTime"
+              value={formData.appointmentTime}
+              onChange={handleInputChange}
+              options={[
+                { value: '09:00', label: '9:00 AM' },
+                { value: '10:00', label: '10:00 AM' },
+                { value: '11:00', label: '11:00 AM' },
+                { value: '12:00', label: '12:00 PM' },
+                { value: '13:00', label: '1:00 PM' },
+                { value: '14:00', label: '2:00 PM' },
+                { value: '15:00', label: '3:00 PM' },
+                { value: '16:00', label: '4:00 PM' },
+                { value: '17:00', label: '5:00 PM' },
+              ]}
+            />
 
             {/* Medical Issues */}
             <SelectField
@@ -199,7 +231,6 @@ const RegisterDonor = () => {
               value={formData.medicalIssues}
               onChange={handleInputChange}
               options={[
-
                 { value: 'no', label: 'No' },
                 { value: 'yes', label: 'Yes' },
               ]}
@@ -254,37 +285,36 @@ const RegisterDonor = () => {
         </div>
 
         {/* Consent Modal */}
-{showConsentInfo && (
-  <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-    <div className="bg-neutral-900 text-white p-6 md:p-8 rounded-xl max-w-lg w-full shadow-lg max-h-[80vh] overflow-y-auto">
-      <h2 className="text-2xl font-bold mb-4">Consent & Agreements</h2>
+        {showConsentInfo && (
+          <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+            <div className="bg-neutral-900 text-white p-6 md:p-8 rounded-xl max-w-lg w-full shadow-lg max-h-[80vh] overflow-y-auto">
+              <h2 className="text-2xl font-bold mb-4">Consent & Agreements</h2>
 
-      <p className="mb-2 text-sm text-gray-300">
-        By registering as a blood donor, I confirm that:
-      </p>
+              <p className="mb-2 text-sm text-gray-300">
+                By registering as a blood donor, I confirm that:
+              </p>
 
-      <ul className="list-disc list-inside mb-4 text-gray-300 text-sm space-y-2">
-        <li>I am at least 18 years old and meet the minimum eligibility criteria for blood donation.</li>
-        <li>The information I provide, including medical history and personal details, is accurate and complete to the best of my knowledge.</li>
-        <li>I am not currently suffering from any illness, infection, or medical condition that may endanger myself or the recipient.</li>
-        <li>I understand that my blood will be collected, tested, and used according to standard medical and safety protocols.</li>
-        <li>I consent to the storage and processing of my personal data for donor registration, appointment scheduling, and related communications.</li>
-        <li>I understand that I may be deferred from donation temporarily or permanently based on health criteria and test results.</li>
-        <li>I acknowledge that donating blood is voluntary and I can withdraw my consent at any time before the donation process begins.</li>
-      </ul>
+              <ul className="list-disc list-inside mb-4 text-gray-300 text-sm space-y-2">
+                <li>I am at least 18 years old and meet the minimum eligibility criteria for blood donation.</li>
+                <li>The information I provide, including medical history and personal details, is accurate and complete to the best of my knowledge.</li>
+                <li>I am not currently suffering from any illness, infection, or medical condition that may endanger myself or the recipient.</li>
+                <li>I understand that my blood will be collected, tested, and used according to standard medical and safety protocols.</li>
+                <li>I consent to the storage and processing of my personal data for donor registration, appointment scheduling, and related communications.</li>
+                <li>I understand that I may be deferred from donation temporarily or permanently based on health criteria and test results.</li>
+                <li>I acknowledge that donating blood is voluntary and I can withdraw my consent at any time before the donation process begins.</li>
+              </ul>
 
-      <div className="flex justify-end gap-3 mt-4">
-        <button
-          className="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
-          onClick={() => setShowConsentInfo(false)}
-        >
-          Close
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
+              <div className="flex justify-end gap-3 mt-4">
+                <button
+                  className="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
+                  onClick={() => setShowConsentInfo(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <ToastContainer position="top-right" autoClose={3000} />
       </div>

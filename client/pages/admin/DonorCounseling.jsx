@@ -14,14 +14,17 @@ export default function DonorCounseling() {
     setMessage("");
     try {
       const token = localStorage.getItem("adminToken");
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/donors/counseling`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/admin/donors/counseling`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(formData),
+        }
+      );
       if (!res.ok) throw new Error("Failed to add counseling");
       setMessage("Counseling added successfully!");
     } catch (err) {
@@ -30,196 +33,112 @@ export default function DonorCounseling() {
   };
 
   return (
-    <div className="bg-gray-900 text-white rounded-2xl shadow-lg p-8">
-        <h2 className="text-3xl font-bold mb-8 text-center text-red-500">
+    <div className="bg-gradient-to-br from-gray-900 to-black text-white rounded-2xl shadow-xl p-10">
+      <h2 className="text-3xl font-extrabold mb-10 text-center text-red-500">
         Donor Counseling
-        </h2>
+      </h2>
 
-        {message && (
-        <p className="text-center mb-6 text-green-400 font-medium">{message}</p>
-        )}
-
-        <form
-        onSubmit={handleSubmit}
-        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+      {message && (
+        <div
+          className={`mb-6 p-4 rounded-lg text-center font-medium ${
+            message.includes("success")
+              ? "bg-green-700 text-green-200"
+              : "bg-red-700 text-red-200"
+          }`}
         >
-        {/* Donor ID */}
-        <div>
-            <label className="block text-sm mb-2">Donor ID</label>
-            <input
-            name="donor_id"
-            placeholder="Enter Donor ID"
-            onChange={handleChange}
-            className="w-full bg-black border border-gray-700 rounded-lg p-3 focus:border-red-500 focus:outline-none transition"
-            />
+          {message}
         </div>
+      )}
 
-        {/* Counseling Date */}
-        <div>
-            <label className="block text-sm mb-2">Counseling Date</label>
+      <form
+        onSubmit={handleSubmit}
+        className="grid grid-cols-1 md:grid-cols-2 gap-8"
+      >
+        {/* Fields */}
+        {[
+          { label: "Donor ID", name: "donor_id", type: "text" },
+          { label: "Counseling Date", name: "counseling_date", type: "datetime-local" },
+          { label: "Height (cm)", name: "height", type: "number" },
+          { label: "Weight (kg)", name: "weight", type: "number" },
+          { label: "Hb Level (g/dl)", name: "hb_level", type: "text" },
+        ].map((field, idx) => (
+          <div key={idx}>
+            <label className="block text-sm font-semibold mb-2 text-gray-300">
+              {field.label}
+            </label>
             <input
-            name="counseling_date"
-            type="datetime-local"
-            onChange={handleChange}
-            className="w-full bg-black border border-gray-700 rounded-lg p-3 focus:border-red-500 focus:outline-none transition"
+              name={field.name}
+              type={field.type}
+              placeholder={`Enter ${field.label}`}
+              onChange={handleChange}
+              className="w-full bg-black border border-gray-700 rounded-lg p-3 text-sm placeholder-gray-500 focus:ring-2 focus:ring-red-500 focus:outline-none transition"
             />
-        </div>
-
-        {/* Height */}
-        <div>
-            <label className="block text-sm mb-2">Height (cm)</label>
-            <input
-            name="height"
-            placeholder="Enter height"
-            onChange={handleChange}
-            className="w-full bg-black border border-gray-700 rounded-lg p-3 focus:border-red-500 focus:outline-none transition"
-            />
-        </div>
-
-        {/* Weight */}
-        <div>
-            <label className="block text-sm mb-2">Weight (kg)</label>
-            <input
-            name="weight"
-            placeholder="Enter weight"
-            onChange={handleChange}
-            className="w-full bg-black border border-gray-700 rounded-lg p-3 focus:border-red-500 focus:outline-none transition"
-            />
-        </div>
-
-        {/* Hb Level */}
-        <div>
-            <label className="block text-sm mb-2">Hb Level (g/dl)</label>
-            <input
-            name="hb_level"
-            placeholder="Enter Hb level"
-            onChange={handleChange}
-            className="w-full bg-black border border-gray-700 rounded-lg p-3 focus:border-red-500 focus:outline-none transition"
-            />
-        </div>
+          </div>
+        ))}
 
         {/* Checkboxes */}
-        <div className="flex items-center gap-3">
+        {[
+          { name: "drunk_last_12hrs", label: "Drunk in last 12hrs" },
+          { name: "well_today", label: "Well Today" },
+          { name: "under_medication", label: "Under Medication" },
+          { name: "fever_in_2_weeks", label: "Fever in last 2 weeks" },
+          { name: "recently_delivered", label: "Recently Delivered" },
+          { name: "pregnancy", label: "Pregnancy" },
+          { name: "surgery", label: "Recent Surgery" },
+        ].map((cb, idx) => (
+          <div key={idx} className="flex items-center gap-3">
             <input
-            type="checkbox"
-            name="drunk_last_12hrs"
-            onChange={(e) =>
-                handleChange({ target: { name: "drunk_last_12hrs", value: e.target.checked } })
-            }
-            className="w-5 h-5 accent-red-600"
+              type="checkbox"
+              onChange={(e) =>
+                handleChange({
+                  target: { name: cb.name, value: e.target.checked },
+                })
+              }
+              className="w-5 h-5 accent-red-600 hover:scale-110 transition-transform"
             />
-            <label>Drunk in last 12hrs</label>
-        </div>
-
-        <div className="flex items-center gap-3">
-            <input
-            type="checkbox"
-            name="well_today"
-            onChange={(e) =>
-                handleChange({ target: { name: "well_today", value: e.target.checked } })
-            }
-            className="w-5 h-5 accent-red-600"
-            />
-            <label>Well Today</label>
-        </div>
-
-        <div className="flex items-center gap-3">
-            <input
-            type="checkbox"
-            name="under_medication"
-            onChange={(e) =>
-                handleChange({ target: { name: "under_medication", value: e.target.checked } })
-            }
-            className="w-5 h-5 accent-red-600"
-            />
-            <label>Under Medication</label>
-        </div>
-
-        <div className="flex items-center gap-3">
-            <input
-            type="checkbox"
-            name="fever_in_2_weeks"
-            onChange={(e) =>
-                handleChange({ target: { name: "fever_in_2_weeks", value: e.target.checked } })
-            }
-            className="w-5 h-5 accent-red-600"
-            />
-            <label>Fever in last 2 weeks</label>
-        </div>
-
-        {/* Extra fields */}
-        <div className="flex items-center gap-3">
-            <input
-            type="checkbox"
-            name="recently_delivered"
-            onChange={(e) =>
-                handleChange({ target: { name: "recently_delivered", value: e.target.checked } })
-            }
-            className="w-5 h-5 accent-red-600"
-            />
-            <label>Recently Delivered</label>
-        </div>
-
-        <div className="flex items-center gap-3">
-            <input
-            type="checkbox"
-            name="pregnancy"
-            onChange={(e) =>
-                handleChange({ target: { name: "pregnancy", value: e.target.checked } })
-            }
-            className="w-5 h-5 accent-red-600"
-            />
-            <label>Pregnancy</label>
-        </div>
-
-        <div className="flex items-center gap-3">
-            <input
-            type="checkbox"
-            name="surgery"
-            onChange={(e) =>
-                handleChange({ target: { name: "surgery", value: e.target.checked } })
-            }
-            className="w-5 h-5 accent-red-600"
-            />
-            <label>Recent Surgery</label>
-        </div>
+            <label className="text-gray-300">{cb.label}</label>
+          </div>
+        ))}
 
         <div className="md:col-span-2">
-            <label className="block text-sm mb-2">Disease History</label>
-            <textarea
+          <label className="block text-sm font-semibold mb-2 text-gray-300">
+            Disease History
+          </label>
+          <textarea
             name="disease_history"
+            rows="3"
             placeholder="Enter disease history"
             onChange={handleChange}
-            rows="3"
-            className="w-full bg-black border border-gray-700 rounded-lg p-3 focus:border-red-500 focus:outline-none transition"
-            ></textarea>
+            className="w-full bg-black border border-gray-700 rounded-lg p-3 text-sm placeholder-gray-500 focus:ring-2 focus:ring-red-500 focus:outline-none transition"
+          ></textarea>
         </div>
 
         <div className="md:col-span-2">
-            <label className="block text-sm mb-2">Status</label>
-            <select
+          <label className="block text-sm font-semibold mb-2 text-gray-300">
+            Status
+          </label>
+          <select
             name="status"
             onChange={handleChange}
-            className="w-full bg-black border border-gray-700 rounded-lg p-3 focus:border-red-500 focus:outline-none transition"
-            >
+            className="w-full bg-black border border-gray-700 rounded-lg p-3 text-sm focus:ring-2 focus:ring-red-500"
+          >
             <option value="">Select status</option>
-            <option value="Approved">Approved</option>
-            <option value="Deferred">Deferred</option>
-            <option value="Pending">Pending</option>
-            </select>
+            <option>Approved</option>
+            <option>Deferred</option>
+            <option>Pending</option>
+          </select>
         </div>
 
         {/* Submit */}
-        <div className="md:col-span-2 flex justify-center mt-6">
-            <button
-            className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-10 rounded-lg transition-colors text-lg"
+        <div className="md:col-span-2 flex justify-center mt-8">
+          <button
             type="submit"
-            >
+            className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-3 px-12 rounded-lg transition-transform transform hover:scale-105 shadow-lg"
+          >
             Save Counseling
-            </button>
+          </button>
         </div>
-        </form>
+      </form>
     </div>
-    );
-
+  );
 }

@@ -13,14 +13,17 @@ export default function DonorRegister() {
     setMessage("");
     try {
       const token = localStorage.getItem("adminToken");
-      const res = await fetch(`${import.meta.env.VITE_ADMIN_BASE_URL}/admin/donors/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_ADMIN_BASE_URL}/admin/donors/register`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(formData),
+        }
+      );
       if (!res.ok) throw new Error("Failed to register donor");
       setMessage("Donor registered successfully!");
     } catch (err) {
@@ -29,102 +32,85 @@ export default function DonorRegister() {
   };
 
   return (
-    <div className="bg-gray-900 text-white rounded-2xl shadow-lg p-8">
-        <h2 className="text-3xl font-bold mb-8 text-center text-red-500">
+    <div className="bg-gradient-to-br from-gray-900 to-black text-white rounded-2xl shadow-xl p-10">
+      <h2 className="text-3xl font-extrabold mb-10 text-center text-red-500">
         Register Donor
-        </h2>
+      </h2>
 
-        {message && (
-        <p className="text-center mb-6 text-green-400 font-medium">{message}</p>
-        )}
-
-        <form
-        onSubmit={handleSubmit}
-        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+      {message && (
+        <div
+          className={`mb-6 p-4 rounded-lg text-center font-medium ${
+            message.includes("success")
+              ? "bg-green-700 text-green-200"
+              : "bg-red-700 text-red-200"
+          }`}
         >
-        {/* Basic Info */}
-        <div>
-            <label className="block text-sm mb-2">First Name</label>
-            <input
-            name="first_name"
-            placeholder="Enter first name"
-            onChange={handleChange}
-            className="w-full bg-black border border-gray-700 rounded-lg p-3 focus:border-red-500 focus:outline-none transition-colors"
-            />
+          {message}
         </div>
+      )}
 
-        <div>
-            <label className="block text-sm mb-2">Last Name</label>
+      <form
+        onSubmit={handleSubmit}
+        className="grid grid-cols-1 md:grid-cols-2 gap-8"
+      >
+        {/* Fields */}
+        {[
+          { label: "First Name", name: "first_name", type: "text" },
+          { label: "Last Name", name: "last_name", type: "text" },
+          { label: "Date of Birth", name: "dob", type: "date" },
+          { label: "Age", name: "age", type: "number" },
+          { label: "Mobile No", name: "mobile_no", type: "text" },
+          { label: "Email", name: "email", type: "email", span: 2 },
+          { label: "Address", name: "address", type: "text", span: 2 },
+          { label: "District", name: "district", type: "text" },
+          { label: "State", name: "state", type: "text" },
+          { label: "Country", name: "country", type: "text" },
+          { label: "Centre ID", name: "centre_id", type: "text" },
+          { label: "Camp ID", name: "camp_id", type: "number" },
+        ].map((field, idx) => (
+          <div
+            key={idx}
+            className={field.span === 2 ? "md:col-span-2" : ""}
+          >
+            <label className="block text-sm font-semibold mb-2 text-gray-300">
+              {field.label}
+            </label>
             <input
-            name="last_name"
-            placeholder="Enter last name"
-            onChange={handleChange}
-            className="w-full bg-black border border-gray-700 rounded-lg p-3 focus:border-red-500 focus:outline-none transition-colors"
+              name={field.name}
+              type={field.type}
+              placeholder={`Enter ${field.label}`}
+              onChange={handleChange}
+              className="w-full bg-black border border-gray-700 rounded-lg p-3 text-sm placeholder-gray-500 focus:ring-2 focus:ring-red-500 focus:outline-none transition"
             />
-        </div>
+          </div>
+        ))}
 
+        {/* Selects */}
         <div>
-            <label className="block text-sm mb-2">Date of Birth</label>
-            <input
-            name="dob"
-            type="date"
-            onChange={handleChange}
-            className="w-full bg-black border border-gray-700 rounded-lg p-3 focus:border-red-500 focus:outline-none transition-colors"
-            />
-        </div>
-
-        <div>
-            <label className="block text-sm mb-2">Age</label>
-            <input
-            name="age"
-            placeholder="Enter age"
-            onChange={handleChange}
-            className="w-full bg-black border border-gray-700 rounded-lg p-3 focus:border-red-500 focus:outline-none transition-colors"
-            />
-        </div>
-
-        <div>
-            <label className="block text-sm mb-2">Gender</label>
-            <select
+          <label className="block text-sm font-semibold mb-2 text-gray-300">
+            Gender
+          </label>
+          <select
             name="gender"
             onChange={handleChange}
-            className="w-full bg-black border border-gray-700 rounded-lg p-3 focus:border-red-500 focus:outline-none transition-colors"
-            >
+            className="w-full bg-black border border-gray-700 rounded-lg p-3 text-sm focus:ring-2 focus:ring-red-500"
+          >
             <option value="">Select gender</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Other">Other</option>
-            </select>
+            <option>Male</option>
+            <option>Female</option>
+            <option>Other</option>
+          </select>
         </div>
 
         <div>
-            <label className="block text-sm mb-2">Mobile No</label>
-            <input
-            name="mobile_no"
-            placeholder="Enter mobile number"
-            onChange={handleChange}
-            className="w-full bg-black border border-gray-700 rounded-lg p-3 focus:border-red-500 focus:outline-none transition-colors"
-            />
-        </div>
-
-        <div className="md:col-span-2">
-            <label className="block text-sm mb-2">Email</label>
-            <input
-            name="email"
-            placeholder="Enter email"
-            onChange={handleChange}
-            className="w-full bg-black border border-gray-700 rounded-lg p-3 focus:border-red-500 focus:outline-none transition-colors"
-            />
-        </div>
-
-        {/* Extended Fields */}
-        <div>
-            <label className="block text-sm mb-2">Blood Group</label>
-            <select
+          <label className="block text-sm font-semibold mb-2 text-gray-300">
+            Blood Group
+          </label>
+          <select
             name="blood_group_id"
             onChange={handleChange}
-            className="w-full bg-black border border-gray-700 rounded-lg p-3 focus:border-red-500 focus:outline-none transition-colors"
-            >
+            className="w-full bg-black border border-gray-700 rounded-lg p-3 text-sm focus:ring-2 focus:ring-red-500"
+          >
             <option value="">Select blood group</option>
             <option value="1">A+</option>
             <option value="2">A-</option>
@@ -134,143 +120,69 @@ export default function DonorRegister() {
             <option value="6">AB-</option>
             <option value="7">O+</option>
             <option value="8">O-</option>
-            </select>
+          </select>
         </div>
 
         <div>
-            <label className="block text-sm mb-2">Marital Status</label>
-            <select
+          <label className="block text-sm font-semibold mb-2 text-gray-300">
+            Marital Status
+          </label>
+          <select
             name="marital_status"
             onChange={handleChange}
-            className="w-full bg-black border border-gray-700 rounded-lg p-3 focus:border-red-500 focus:outline-none transition-colors"
-            >
+            className="w-full bg-black border border-gray-700 rounded-lg p-3 text-sm focus:ring-2 focus:ring-red-500"
+          >
             <option value="">Select status</option>
-            <option value="Single">Single</option>
-            <option value="Married">Married</option>
-            </select>
-        </div>
-
-        <div className="md:col-span-2">
-            <label className="block text-sm mb-2">Address</label>
-            <input
-            name="address"
-            placeholder="Enter address"
-            onChange={handleChange}
-            className="w-full bg-black border border-gray-700 rounded-lg p-3 focus:border-red-500 focus:outline-none transition-colors"
-            />
+            <option>Single</option>
+            <option>Married</option>
+          </select>
         </div>
 
         <div>
-            <label className="block text-sm mb-2">District</label>
-            <input
-            name="district"
-            placeholder="Enter district"
-            onChange={handleChange}
-            className="w-full bg-black border border-gray-700 rounded-lg p-3 focus:border-red-500 focus:outline-none transition-colors"
-            />
-        </div>
-
-        <div>
-            <label className="block text-sm mb-2">State</label>
-            <input
-            name="state"
-            placeholder="Enter state"
-            onChange={handleChange}
-            className="w-full bg-black border border-gray-700 rounded-lg p-3 focus:border-red-500 focus:outline-none transition-colors"
-            />
-        </div>
-
-        <div>
-            <label className="block text-sm mb-2">Country</label>
-            <input
-            name="country"
-            placeholder="Enter country"
-            onChange={handleChange}
-            className="w-full bg-black border border-gray-700 rounded-lg p-3 focus:border-red-500 focus:outline-none transition-colors"
-            />
-        </div>
-
-        <div>
-            <label className="block text-sm mb-2">Centre ID</label>
-            <input
-            name="centre_id"
-            placeholder="Enter centre ID"
-            onChange={handleChange}
-            className="w-full bg-black border border-gray-700 rounded-lg p-3 focus:border-red-500 focus:outline-none transition-colors"
-            />
-        </div>
-
-        <div>
-            <label className="block text-sm mb-2">Camp ID</label>
-            <input
-            name="camp_id"
-            type="number"
-            placeholder="Enter camp ID"
-            onChange={handleChange}
-            className="w-full bg-black border border-gray-700 rounded-lg p-3 focus:border-red-500 focus:outline-none transition-colors"
-            />
-        </div>
-
-        <div>
-            <label className="block text-sm mb-2">Registration Type</label>
-            <select
+          <label className="block text-sm font-semibold mb-2 text-gray-300">
+            Registration Type
+          </label>
+          <select
             name="registration_type"
             onChange={handleChange}
-            className="w-full bg-black border border-gray-700 rounded-lg p-3 focus:border-red-500 focus:outline-none transition-colors"
-            >
+            className="w-full bg-black border border-gray-700 rounded-lg p-3 text-sm focus:ring-2 focus:ring-red-500"
+          >
             <option value="">Select type</option>
             <option value="Centre">Centre</option>
             <option value="Camp">Camp</option>
-            </select>
+          </select>
         </div>
 
-        {/* Boolean Fields */}
-        <div className="flex items-center gap-3">
+        {/* Checkboxes */}
+        {[
+          { name: "donated_previously", label: "Donated Previously" },
+          { name: "willing_future_donation", label: "Willing for Future Donation" },
+          { name: "contact_preference", label: "Allow Contact" },
+        ].map((cb, idx) => (
+          <div key={idx} className="flex items-center gap-3">
             <input
-            type="checkbox"
-            name="donated_previously"
-            onChange={(e) =>
-                handleChange({ target: { name: "donated_previously", value: e.target.checked } })
-            }
-            className="w-5 h-5 accent-red-600"
+              type="checkbox"
+              onChange={(e) =>
+                handleChange({
+                  target: { name: cb.name, value: e.target.checked },
+                })
+              }
+              className="w-5 h-5 accent-red-600 hover:scale-110 transition-transform"
             />
-            <label>Donated Previously</label>
-        </div>
-
-        <div className="flex items-center gap-3">
-            <input
-            type="checkbox"
-            name="willing_future_donation"
-            onChange={(e) =>
-                handleChange({ target: { name: "willing_future_donation", value: e.target.checked } })
-            }
-            className="w-5 h-5 accent-red-600"
-            />
-            <label>Willing for Future Donation</label>
-        </div>
-
-        <div className="flex items-center gap-3">
-            <input
-            type="checkbox"
-            name="contact_preference"
-            onChange={(e) =>
-                handleChange({ target: { name: "contact_preference", value: e.target.checked } })
-            }
-            className="w-5 h-5 accent-red-600"
-            />
-            <label>Allow Contact</label>
-        </div>
+            <label className="text-gray-300">{cb.label}</label>
+          </div>
+        ))}
 
         {/* Submit */}
-        <div className="md:col-span-2 flex justify-center mt-6">
-            <button
-            className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-10 rounded-lg transition-colors text-lg"
+        <div className="md:col-span-2 flex justify-center mt-8">
+          <button
             type="submit"
-            >
+            className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-3 px-12 rounded-lg transition-transform transform hover:scale-105 shadow-lg"
+          >
             Register Donor
-            </button>
+          </button>
         </div>
-        </form>
+      </form>
     </div>
-    );
+  );
 }

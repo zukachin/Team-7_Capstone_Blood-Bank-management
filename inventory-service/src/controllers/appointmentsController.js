@@ -84,18 +84,92 @@ exports.createAppointment = async (req, res) => {
     // confirmation email to user
     try {
       await sendMail(
-        user.email,
-        "Appointment Request Received",
-        `Hi ${user.name}, your appointment request has been received.\n\nDate: ${appointment_date}\nTime: ${appointment_time}\nCentre: ${centre_id}\n\nStatus: Pending`,
-        `<p>Hi <b>${user.name}</b>,</p>
-         <p>Your appointment request has been received:</p>
-         <ul>
-          <li>Date: ${appointment_date || 'Not scheduled yet'}</li>
-          <li>Time: ${appointment_time || 'Not scheduled yet'}</li>
-          <li>Centre: ${centre_id}</li>
-         </ul>
-         <p>Status: <b>Pending approval</b></p>`
-      );
+         "Life Link - Appointment Request Received",
+    `Hi ${user.name}, your appointment request has been received.\n\nDate: ${appointment_date}\nTime: ${appointment_time}\nCentre: ${centre_id}\n\nStatus: Pending`,
+    `
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f9fafb;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        max-width: 600px;
+        margin: 30px auto;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        padding: 25px;
+      }
+      .header {
+        background-color: #d7d124ff;
+        color: #fff;
+        text-align: center;
+        padding: 15px;
+        border-radius: 12px 12px 0 0;
+        font-size: 20px;
+        font-weight: bold;
+      }
+      .content {
+        color: #333;
+        font-size: 15px;
+        line-height: 1.6;
+      }
+      .details {
+        background: #f1fdfc;
+        padding: 12px;
+        border-left: 4px solid #d7d124ff;
+        margin: 15px 0;
+        border-radius: 6px;
+      }
+      .details li {
+        margin: 6px 0;
+      }
+      .status {
+        font-weight: bold;
+        color: #e63946;
+      }
+      .footer {
+        text-align: center;
+        color: #777;
+        font-size: 13px;
+        margin-top: 20px;
+      }
+      .footer b {
+        color: #f1250aff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">Life Link Appointment Request</div>
+      <div class="content">
+        <p>Hi <b>${user.name}</b>,</p>
+        <p>Your appointment request has been received with the following details:</p>
+        <div class="details">
+          <ul>
+            <li><b>Date:</b> ${appointment_date || 'Not scheduled yet'}</li>
+            <li><b>Time:</b> ${appointment_time || 'Not scheduled yet'}</li>
+            <li><b>Centre:</b> ${centre_id}</li>
+          </ul>
+        </div>
+        <p>Status: <span class="status">Pending approval</span></p>
+        <p>You will receive another email once your appointment is confirmed or declined.</p>
+        <p>Thank you for choosing <b>Life Link</b>.</p>
+      </div>
+      <div class="footer">
+        © ${new Date().getFullYear()} <b>Life Link</b> | All rights reserved
+      </div>
+    </div>
+  </body>
+</html>
+`
+  );
     } catch (mailErr) {
       console.error('createAppointment: failed to send confirmation email', mailErr);
       // don't fail the request — appointment already saved
@@ -146,8 +220,87 @@ exports.deleteAppointment = async (req, res) => {
 
     // email confirmation to user
     try {
-      await sendMail(user.email, 'Appointment Cancelled', `Hi ${user.name}, your appointment #${appointmentId} has been cancelled.`, `<p>Hi <b>${user.name}</b>,</p><p>Your appointment #${appointmentId} has been cancelled.</p>`);
-    } catch (e) {
+      await sendMail(user.email, 
+      "Life Link - Appointment Cancelled",
+  `Hi ${user.name}, your appointment #${appointmentId} has been cancelled.`,
+  `
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f9fafb;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        max-width: 600px;
+        margin: 30px auto;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        padding: 25px;
+      }
+      .header {
+        background-color: #e63946; /* consistent red theme */
+        color: #fff;
+        text-align: center;
+        padding: 15px;
+        border-radius: 12px 12px 0 0;
+        font-size: 20px;
+        font-weight: bold;
+      }
+      .content {
+        color: #333;
+        font-size: 15px;
+        line-height: 1.6;
+      }
+      .details {
+        background: #fff5f5; /* light red background */
+        padding: 12px;
+        border-left: 4px solid #e63946;
+        margin: 15px 0;
+        border-radius: 6px;
+      }
+      .status {
+        font-weight: bold;
+        color: #e63946; /* red for cancelled */
+      }
+      .footer {
+        text-align: center;
+        color: #777;
+        font-size: 13px;
+        margin-top: 20px;
+      }
+      .footer b {
+        color: #e63946;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">Life Link Appointment Cancelled</div>
+      <div class="content">
+        <p>Hi <b>${user.name}</b>,</p>
+        <p>We regret to inform you that your appointment <b>#${appointmentId}</b> has been <span class="status">cancelled</span>.</p>
+        <div class="details">
+          If this was not expected or you’d like to reschedule, please contact our support team
+          or book a new appointment through the <b>Life Link</b> portal.
+        </div>
+        <p>We apologize for any inconvenience caused.</p>
+        <p>Best regards,<br/><b>Life Link Team</b></p>
+      </div>
+      <div class="footer">
+        © ${new Date().getFullYear()} <b>Life Link</b> | All rights reserved
+      </div>
+    </div>
+  </body>
+</html>
+`
+);  } 
+    catch (e) {
       console.error('Failed to send cancellation email', e);
     }
 

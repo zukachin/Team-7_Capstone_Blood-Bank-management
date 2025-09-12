@@ -115,12 +115,88 @@ exports.updateAppointmentStatus = async (req, res) => {
       if (appointment.user_email) {
         await sendMail(
           appointment.user_email,
-          "Appointment Rejected",
-          `Hi ${appointment.user_name || ''}, unfortunately your appointment was rejected. Reason: ${reason || "Not specified"}`,
-          `<p>Hi <b>${appointment.user_name || ''}</b>,</p>
-           <p>Unfortunately your appointment was <b>Rejected</b>.</p>
-           <p>Reason: ${reason || "Not specified"}</p>`
-        );
+"Life Link Appointment Update",
+`Hi ${appointment.user_name || ''}, we regret to inform you that your appointment request has been declined. Reason: ${reason || "Not specified"}`,
+`
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f9fafb;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        max-width: 600px;
+        margin: 30px auto;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        padding: 25px;
+      }
+      .header {
+        background-color: #e63946;
+        color: #fff;
+        text-align: center;
+        padding: 15px;
+        border-radius: 12px 12px 0 0;
+        font-size: 20px;
+        font-weight: bold;
+      }
+      .content {
+        color: #333;
+        font-size: 15px;
+        line-height: 1.6;
+      }
+      .reason {
+        background: #f1f1f1;
+        padding: 12px;
+        border-left: 4px solid #e63946;
+        margin: 15px 0;
+        border-radius: 6px;
+        font-style: italic;
+      }
+      .footer {
+        text-align: center;
+        color: #777;
+        font-size: 13px;
+        margin-top: 20px;
+      }
+      .footer b {
+        color: #e63946;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">Life Link Appointment Update</div>
+      <div class="content">
+        <p>Dear <b>${appointment.user_name || ''}</b>,</p>
+        <p>
+          Thank you for your interest in scheduling an appointment with <b>Life Link</b>.
+          After careful review, we regret to inform you that your appointment request has been
+          <b style="color:#e63946;">declined</b>.
+        </p>
+        <div class="reason">
+          <b>Reason:</b> ${reason || "Not specified"}
+        </div>
+        <p>
+          We apologize for any inconvenience this may cause. Please feel free to reach out to our support
+          team if you have any questions or wish to reschedule in the future.
+        </p>
+        <p>Best regards,<br/><b>Life Link Team</b></p>
+      </div>
+      <div class="footer">
+        © ${new Date().getFullYear()} <b>Life Link</b> | All rights reserved
+      </div>
+    </div>
+  </body>
+</html>
+`
+);
       } else {
         console.warn('No user_email for appointment', appointmentId);
       }

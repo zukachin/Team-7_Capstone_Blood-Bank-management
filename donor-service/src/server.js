@@ -1,15 +1,19 @@
 // server.js
 require('dotenv').config();
 const express = require('express');
-const app = express();
 const authRoutes = require('./routes/authRoutes.js');
 const { requireAuth } = require('./middlewares/authMiddleware.js');
 const pool = require('./db/pool.js');
+const cors = require("cors");
 const locationRoutes = require('./routes/locationRoutes');
 const profileRoutes = require("./routes/profileRoutes");
 const bloodGroupRoutes = require("./routes/bloodGroupRoutes");
 
-app.use(express.json());
+const app = express();
+app.use(cors({ origin: ["http://localhost:5173"], credentials: false }));
+app.use(express.json());  // ✅ must be here before routes
+app.use(express.urlencoded({ extended: true }));
+
 
 
 app.use('/api/auth', authRoutes);

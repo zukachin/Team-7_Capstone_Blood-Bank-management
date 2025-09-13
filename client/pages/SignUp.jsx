@@ -1,231 +1,250 @@
-// client/pages/Signup.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
+
+/**
+ * SignUp.jsx
+ * - fetches states, districts, blood groups
+ * - submits payload that matches backend validators:
+ *   { name, email, password, phone, gender, age, blood_group_id, state_id, district_id, address }
+ */
 
 export default function SignUp() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
+  const [states, setStates] = useState([]);
+  const [districts, setDistricts] = useState([]);
+  const [bloodGroups, setBloodGroups] = useState([]);
+
   const [form, setForm] = useState({
     name: "",
     email: "",
     phone: "",
     password: "",
-    age: "",
     gender: "",
+    age: "",
+    blood_group_id: "", // <- important: numeric id expected by backend
     state_id: "",
     district_id: "",
-    blood_group_id: "",
     address: "",
   });
 
-  const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  // load states
+  useEffect(() => {
+    api.getStates()
+      .then((res) => {
+        // backend returns { states: [...] } earlier — handle both shapes
+        const arr = res?.states ?? res?.data ?? res ?? [];
+        setStates(Array.isArray(arr) ? arr : []);
+      })
+      .catch((e) => {
+        console.error("Failed to load states:", e);
+      });
+  }, []);
+
+  // load districts when state changes
+  useEffect(() => {
+    if (!form.state_id) {
+      setDistricts([]);
+      setForm((s) => ({ ...s, district_id: "" }));
+      return;
+    }
+    api.getDistrictsByState(form.state_id)
+      .then((res) => {
+        const arr = res?.districts ?? res?.data ?? res ?? [];
+        setDistricts(Array.isArray(arr) ? arr : []);
+      })
+      .catch((e) => {
+        console.error("Failed to load districts:", e);
+      });
+  }, [form.state_id]);
+
+  // load blood groups
+  useEffect(() => {
+    if (!api.getBloodGroups) return;
+    api.getBloodGroups()
+      .then((res) => {
+        // many backends return array directly; some wrap in { blood_groups: [...] }
+        const arr = res?.blood_groups ?? res?.data ?? res ?? [];
+        setBloodGroups(Array.isArray(arr) ? arr : []);
+      })
+      .catch((e) => {
+        console.error("Failed to load blood groups:", e);
+      });
+  }, []);
+
+  const onChange = (e) => {
+    const { name, value } = e.target;
+    setForm((s) => ({ ...s, [name]: value }));
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setErr("");
     setLoading(true);
-    try {
-      const res = await api.register({
-        name: form.name,
-        email: form.email,
-        phone: form.phone,
-        password: form.password,
-        age: parseInt(form.age, 10),
-        gender: form.gender,
-        state_id: parseInt(form.state_id, 10),
-        district_id: parseInt(form.district_id, 10),
-        blood_group_id: parseInt(form.blood_group_id, 10),
-        address: form.address,
-        is_verified: false, // default until OTP
-      });
 
-      navigate(`/verify-otp?email=${encodeURIComponent(form.email)}`);
+    // Validate all fields required by backend
+    if (
+      !form.name.trim() ||
+      !form.email.trim() ||
+      !form.password ||
+      !form.phone.trim() ||
+      !form.gender ||
+      !form.age ||
+      !form.blood_group_id ||
+      !form.state_id ||
+      !form.district_id ||
+      !form.address.trim()
+    ) {
+      setErr("Please fill in all required fields.");
+      setLoading(false);
+      return;
+    }
+
+    // Build payload using backend field names
+    const payload = {
+      name: form.name,
+      email: form.email,
+      password: form.password,
+      phone: form.phone,
+      gender: form.gender,
+      age: Number(form.age),
+      blood_group_id: Number(form.blood_group_id), // <- numeric id required
+      state_id: Number(form.state_id),
+      district_id: Number(form.district_id),
+      address: form.address,
+    };
+
+    console.log("Register payload:", payload); // check in DevTools Network/Console
+
+    try {
+      const res = await api.register(payload);
+      // backend may return { userId } or similar
+      const userId = res?.userId || res?.user_id || res?.id || "";
+      navigate(`/verify-otp?userId=${encodeURIComponent(userId)}&email=${encodeURIComponent(form.email)}`);
     } catch (error) {
-      setErr(error.message || "Failed to register");
+      console.error("Register failed:", error);
+      // If backend returns structured errors, show a friendly message
+      const detail = error?.body ?? error?.message;
+      setErr(typeof detail === "string" ? detail : "Failed to register");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="flex flex-col items-center justify-center min-h-screen px-4 sm:px-6 py-8 sm:py-12">
-        <div className="w-full max-w-4xl">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-8 sm:mb-12 text-center">
-            Create Your Account
-          </h1>
+    <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
+      <div className="w-full max-w-3xl bg-neutral-900 p-8 rounded-xl shadow-xl">
+        <h1 className="text-3xl font-bold mb-6 text-center">Create Your Account</h1>
 
-          <form
-            onSubmit={onSubmit}
-            className="grid grid-cols-1 gap-y-8 md:grid-cols-2 md:gap-x-12 md:gap-y-6 bg-gray-900/40 border border-gray-800 rounded-2xl p-6"
-          >
-            {err && <div className="text-red-400 text-sm col-span-2">{err}</div>}
+        <form onSubmit={onSubmit} className="grid grid-cols-1 gap-y-6">
+          {err && <div className="text-red-400 text-sm">{err}</div>}
 
-            {/* Left column */}
-            <div className="space-y-6">
-              <div>
-                <label className="block text-white mb-2">Full Name</label>
-                <input
-                  name="name"
-                  value={form.name}
-                  onChange={onChange}
-                  placeholder="Enter full name"
-                  className="w-full bg-transparent border-b border-gray-600 py-2 focus:border-red-500 focus:outline-none"
-                  required
-                />
-              </div>
+          <div>
+            <label className="block mb-2">Full Name</label>
+            <input name="name" value={form.name} onChange={onChange} required
+              className="w-full bg-black border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none" />
+          </div>
 
-              <div>
-                <label className="block text-white mb-2">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={form.email}
-                  onChange={onChange}
-                  placeholder="Enter email"
-                  className="w-full bg-transparent border-b border-gray-600 py-2 focus:border-red-500 focus:outline-none"
-                  required
-                />
-              </div>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block mb-2">Email</label>
+              <input name="email" type="email" value={form.email} onChange={onChange} required
+                className="w-full bg-black border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none" />
+            </div>
+            <div>
+              <label className="block mb-2">Phone</label>
+              <input name="phone" value={form.phone} onChange={onChange} required
+                className="w-full bg-black border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none" />
+            </div>
+          </div>
 
-              <div>
-                <label className="block text-white mb-2">Phone Number</label>
-                <input
-                  name="phone"
-                  value={form.phone}
-                  onChange={onChange}
-                  placeholder="Enter phone number"
-                  className="w-full bg-transparent border-b border-gray-600 py-2 focus:border-red-500 focus:outline-none"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-white mb-2">Password</label>
-                <input
-                  type="password"
-                  name="password"
-                  value={form.password}
-                  onChange={onChange}
-                  placeholder="Create password"
-                  className="w-full bg-transparent border-b border-gray-600 py-2 focus:border-red-500 focus:outline-none"
-                  required
-                />
-              </div>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block mb-2">Password</label>
+              <input name="password" type="password" value={form.password} onChange={onChange} required
+                className="w-full bg-black border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none" />
             </div>
 
-            {/* Right column */}
-            <div className="space-y-6">
-              <div>
-                <label className="block text-white mb-2">Age</label>
-                <input
-                  type="number"
-                  name="age"
-                  value={form.age}
-                  onChange={onChange}
-                  placeholder="Enter age"
-                  className="w-full bg-transparent border-b border-gray-600 py-2 focus:border-red-500 focus:outline-none"
-                  required
-                />
-              </div>
+            <div>
+              <label className="block mb-2">Gender</label>
+              <select name="gender" value={form.gender} onChange={onChange} required
+                className="w-full bg-black border-b border-gray-600 py-2 text-white">
+                <option value="">Select gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
 
-              <div>
-                <label className="block text-white mb-2">Gender</label>
-                <select
-                  name="gender"
-                  value={form.gender}
-                  onChange={onChange}
-                  className="w-full bg-transparent border-b border-gray-600 py-2 focus:border-red-500 focus:outline-none"
-                  required
-                >
-                  <option value="">Select gender</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-white mb-2">State ID</label>
-                <input
-                  type="number"
-                  name="state_id"
-                  value={form.state_id}
-                  onChange={onChange}
-                  placeholder="Enter state ID"
-                  className="w-full bg-transparent border-b border-gray-600 py-2 focus:border-red-500 focus:outline-none"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-white mb-2">District ID</label>
-                <input
-                  type="number"
-                  name="district_id"
-                  value={form.district_id}
-                  onChange={onChange}
-                  placeholder="Enter district ID"
-                  className="w-full bg-transparent border-b border-gray-600 py-2 focus:border-red-500 focus:outline-none"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-white mb-2">Blood Group ID</label>
-                <input
-                  type="number"
-                  name="blood_group_id"
-                  value={form.blood_group_id}
-                  onChange={onChange}
-                  placeholder="Enter blood group ID"
-                  className="w-full bg-transparent border-b border-gray-600 py-2 focus:border-red-500 focus:outline-none"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-white mb-2">Address</label>
-                <textarea
-                  name="address"
-                  value={form.address}
-                  onChange={onChange}
-                  placeholder="Enter full address"
-                  className="w-full bg-transparent border border-gray-600 rounded-md py-2 focus:border-red-500 focus:outline-none"
-                  required
-                />
-              </div>
+          <div className="grid md:grid-cols-3 gap-4">
+            <div>
+              <label className="block mb-2">Age</label>
+              <input name="age" type="number" min="18" value={form.age} onChange={onChange} required
+                className="w-full bg-black border-b border-gray-600 py-2 text-white" />
             </div>
 
-            {/* Actions */}
-            <div className="col-span-2 flex flex-col space-y-3 pt-4">
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition-colors duration-200 disabled:opacity-60"
-              >
-                {loading ? "Sending OTP..." : "Register"}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => navigate("/")}
-                className="w-full bg-transparent border border-gray-600 hover:border-red-500 text-white py-3 rounded-lg transition-colors duration-200"
-              >
-                Back to Home
-              </button>
-
-              <p className="text-sm text-gray-400 text-center">
-                Already have an account?{" "}
-                <a href="/login" className="text-red-400 hover:underline">
-                  Login
-                </a>
-              </p>
+            <div>
+              <label className="block mb-2">Blood Group</label>
+              <select name="blood_group_id" value={form.blood_group_id} onChange={onChange} required
+                className="w-full bg-black border-b border-gray-600 py-2 text-white">
+                <option value="">Select blood group</option>
+                {bloodGroups.map((bg) => (
+                  <option key={bg.id} value={bg.id}>
+                    {bg.group_name ?? bg.name ?? bg.label}
+                  </option>
+                ))}
+              </select>
             </div>
-          </form>
-        </div>
+
+            <div>
+              <label className="block mb-2">State</label>
+              <select name="state_id" value={form.state_id} onChange={onChange} required
+                className="w-full bg-black border-b border-gray-600 py-2 text-white">
+                <option value="">Select state</option>
+                {states.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name ?? s.state_name ?? s.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block mb-2">District</label>
+            <select name="district_id" value={form.district_id} onChange={onChange} required
+              className="w-full bg-black border-b border-gray-600 py-2 text-white">
+              <option value="">Select district</option>
+              {districts.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name ?? d.district_name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block mb-2">Address</label>
+            <textarea name="address" value={form.address} onChange={onChange} rows={2}
+              className="w-full bg-black border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none" />
+          </div>
+
+          <div className="flex items-center justify-between gap-4">
+            <button type="submit" disabled={loading}
+              className="bg-red-600 hover:bg-red-700 px-6 py-2 rounded-lg font-semibold disabled:opacity-60">
+              {loading ? "Registering..." : "Create Account"}
+            </button>
+
+            <button type="button" onClick={() => navigate("/login")}
+              className="bg-transparent border border-gray-700 hover:border-red-500 px-6 py-2 rounded-lg">
+              Back to Login
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

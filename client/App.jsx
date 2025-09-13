@@ -27,6 +27,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CookiePolicy from "./pages/CookiePolicy";
 import Accessibility from "./pages/Accessibility";
 import TermsConditions from "./pages/TermsConditions";
+import CampRegistration from "./pages/CampRegistration";
 
 
 
@@ -65,6 +66,7 @@ export default function App() {
             <Route path="/cookie-policy" element={<CookiePolicy />} />
             <Route path="/accessibility" element={<Accessibility />} />
             <Route path="/terms-conditions" element={<TermsConditions />} />
+            <Route path="/camp-registration" element={<CampRegistration />} />
             
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

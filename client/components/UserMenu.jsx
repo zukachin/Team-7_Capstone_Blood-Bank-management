@@ -1,7 +1,7 @@
 // client/components/UserMenu.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { clearAuthToken } from "../lib/api";
+import { api } from "../lib/api";
 import userPng from "../assets/profile-icon.png";
 
 export default function UserMenu() {
@@ -26,7 +26,7 @@ export default function UserMenu() {
   }, []);
 
   const logout = () => {
-    clearAuthToken();
+    api.setToken(null);
     setOpen(false);
     window.location.href = "/";
   };

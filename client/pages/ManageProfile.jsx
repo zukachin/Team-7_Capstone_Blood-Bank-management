@@ -20,40 +20,18 @@ export default function ManageProfilePage() {
   }, [token, navigate]);
 
   useEffect(() => {
-    async function fetchProfile() {
-      try {
-        if (!token) return navigate("/login");
-
-        const data = await api.getProfile(token);
-
-        setProfileData({
-          id: data.id,
-          name: data.name || "",
-          email: data.email || "",
-          phone: data.phone || "",
-          age: data.age || "",
-          gender: data.gender || "",
-          state_id: data.state_id || "",
-          district_id: data.district_id || "",
-          blood_group_id: data.blood_group_id || "",
-          address: data.address || "",
-        });
-
-        // fetch blood groups + districts
-        const bg = await api.getBloodGroups(token);
-        setBloodGroups(bg || []);
-
-        const dist = await api.getDistrictsByState(data.state_id);
-        setDistricts(dist || []);
-      } catch (err) {
-        console.error("Failed to load profile:", err);
-      } finally {
-        setLoading(false);
-      }
+  async function fetchProfile() {
+    try {
+      const data = await api.getProfile();
+      setProfileData(data);
+    } catch (err) {
+      console.error("Failed to load profile:", err);
+    } finally {
+      setLoading(false);
     }
-
-    fetchProfile();
-  }, [token, navigate]);
+  }
+  fetchProfile();
+}, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -64,33 +42,14 @@ export default function ManageProfilePage() {
   };
 
   const handleSave = async () => {
-    try {
-      if (!token) {
-        alert("You are not logged in.");
-        return;
-      }
-
-      const payload = {
-        name: profileData.name,
-        phone: profileData.phone,
-        age: profileData.age,
-        gender: profileData.gender,
-        state_id: profileData.state_id,
-        district_id: profileData.district_id,
-        blood_group_id: profileData.blood_group_id,
-        address: profileData.address,
-      };
-
-      setSaving(true);
-      await api.updateProfile(payload, token);
-      alert("Profile updated successfully!");
-    } catch (err) {
-      console.error("Update failed:", err);
-      alert("Failed to update profile");
-    } finally {
-      setSaving(false);
-    }
-  };
+  try {
+    await api.updateProfile(profileData);
+    alert("Profile updated successfully!");
+  } catch (err) {
+    console.error("Update failed:", err);
+    alert("Failed to update profile");
+  }
+};
 
   const handleBackToHome = () => {
     navigate("/");

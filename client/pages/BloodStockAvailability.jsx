@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Header } from "../components/Header";
+import { api } from "../lib/api"; // ✅ Use your central API helper
 
 const BloodStockAvailability = () => {
   const [states, setStates] = useState([]);
@@ -11,145 +12,190 @@ const BloodStockAvailability = () => {
   const [stocks, setStocks] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch states on mount
+  // Load states on mount
   useEffect(() => {
-    fetch("/api/states") // 🔹 replace with your backend API
-      .then((res) => res.json())
-      .then((data) => setStates(data));
-  }, []);
+  api.getStates()
+    .then((res) => {
+      // Log response for debugging
+      console.log("States response:", res);
+      // Defensive: if res is an object with a property (like `states`), extract the array accordingly
+      if (Array.isArray(res)) {
+        setStates(res);
+      } else if (res && Array.isArray(res.states)) {
+        setStates(res.states);
+      } else {
+        // fallback empty array if response is unexpected
+        setStates([]);
+        console.warn("Unexpected states response format");
+      }
+    })
+    .catch((err) => {
+      console.error("Error loading states", err);
+      setStates([]);
+    });
+}, []);
 
-  // Fetch districts when state changes
+
+  // Load districts when state changes
   useEffect(() => {
-    if (selectedState) {
-      fetch(`/api/districts?state=${selectedState}`) // 🔹 backend endpoint
-        .then((res) => res.json())
-        .then((data) => setDistricts(data));
+  if (!selectedState) {
+    setDistricts([]);
+    return;
+  }
+  api.getDistrictsByState(selectedState)
+    .then((res) => {
+      console.log("Districts response:", res);
+      if (Array.isArray(res)) {
+        setDistricts(res);
+      } else if (res && Array.isArray(res.districts)) {
+        setDistricts(res.districts);
+      } else {
+        setDistricts([]);
+        console.warn("Unexpected districts response format");
+      }
+    })
+    .catch((err) => {
+      console.error("Error loading districts", err);
+      setDistricts([]);
+    });
+}, [selectedState]);
+
+
+  const handleSearch = async () => {
+  setLoading(true);
+  try {
+    // Build query params safely
+    const params = new URLSearchParams();
+
+    if (selectedState) params.append("state_id", selectedState);
+    if (selectedDistrict) params.append("district_id", selectedDistrict);
+    if (bloodGroup) params.append("blood_group", bloodGroup);
+    if (component) params.append("component", component);
+
+    const response = await fetch(`http://localhost:4001/api/blood-availability?${params.toString()}`);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-  }, [selectedState]);
 
-  // Fetch blood stock data
-  const handleSearch = () => {
-    setLoading(true);
-    fetch(
-      `/api/blood-stocks?state=${selectedState}&district=${selectedDistrict}&bloodGroup=${bloodGroup}&component=${component}`
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        setStocks(data);
-        setLoading(false);
-      });
-  };
+    const data = await response.json();
+
+    // Ensure data is an array before setting it
+    setStocks(Array.isArray(data) ? data : []);
+  } catch (err) {
+    console.error("Failed to fetch stock:", err);
+    setStocks([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-black text-white">
-        <Header />    
+      <Header />
 
-        <div className="p-8 bg-black min-h-screen">
-        <h1
-            className="text-3xl font-bold text-white-dark mb-6"
-            style={{ fontFamily: "Lora, -apple-system, Roboto, Helvetica, sans-serif" }}
-        >
-            Blood Stock Availability
-        </h1>
+      <div className="p-8">
+        <h1 className="text-3xl font-bold mb-6">Blood Stock Availability</h1>
 
         {/* Filters */}
-        <div className="bg-black-900 shadow-md rounded-xl p-6 mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-neutral-900 shadow-md rounded-xl p-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* State */}
             <select
-                className="p-3 border rounded-lg text-gray-500"
-                value={selectedState}
-                onChange={(e) => setSelectedState(e.target.value)}
+              className="w-full bg-black border-b border-gray-600 py-2 text-white"
+              value={selectedState}
+              onChange={(e) => setSelectedState(e.target.value)}
             >
-                <option value="">Select State</option>
-                {states.map((s, i) => (
-                <option key={i} value={s}>{s}</option>
-                ))}
+              <option className="text-black">Select State</option>
+              {states.map((s) => (
+                <option className="text-white" key={s.id} value={s.id}>{s.state_name}</option>
+              ))}
             </select>
 
             {/* District */}
             <select
-                className="p-3 border rounded-lg text-gray-500"
-                value={selectedDistrict}
-                onChange={(e) => setSelectedDistrict(e.target.value)}
+              className="w-full bg-black border-b border-gray-600 py-2 text-white"
+              value={selectedDistrict}
+              onChange={(e) => setSelectedDistrict(e.target.value)}
             >
-                <option value="">Select District</option>
-                {districts.map((d, i) => (
-                <option key={i} value={d}>{d}</option>
-                ))}
+              <option value="">Select District</option>
+              {districts.map((d) => (
+                <option key={d.id} value={d.id}>{d.district_name}</option>
+              ))}
             </select>
 
             {/* Blood Group */}
             <select
-                className="p-3 border rounded-lg text-gray-500"
-                value={bloodGroup}
-                onChange={(e) => setBloodGroup(e.target.value)}
+              className="w-full bg-black border-b border-gray-600 py-2 text-white"
+              value={bloodGroup}
+              onChange={(e) => setBloodGroup(e.target.value)}
             >
-                <option value="">Select Blood Group</option>
-                {["A+Ve", "A-Ve", "B+Ve", "B-Ve", "O+Ve", "O-Ve", "AB+Ve", "AB-Ve"].map((bg, i) => (
-                <option key={i} value={bg}>{bg}</option>
-                ))}
+              <option value="">Select Blood Group</option>
+              {["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"].map((bg) => (
+                <option key={bg} value={bg}>{bg}</option>
+              ))}
             </select>
 
             {/* Component */}
             <select
-                className="p-3 border rounded-lg text-gray-500"
-                value={component}
-                onChange={(e) => setComponent(e.target.value)}
+              className="w-full bg-black border-b border-gray-600 py-2 text-white"
+              value={component}
+              onChange={(e) => setComponent(e.target.value)}
             >
-                <option value="">Select Component</option>
-                {["Whole Blood", "Plasma", "Platelets"].map((c, i) => (
-                <option key={i} value={c}>{c}</option>
-                ))}
+              <option value="">Select Component</option>
+              {["Whole Blood", "Plasma", "Platelets"].map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
             </select>
-            </div>
+          </div>
 
-            <div className="mt-6">
+          <div className="mt-6">
             <button
-                onClick={handleSearch}
-                className="bg-red-600 hover:bg-red-900 text-white px-6 py-2 rounded-lg transition"
+              onClick={handleSearch}
+              className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg"
             >
-                {loading ? "Searching..." : "Search"}
+              {loading ? "Searching..." : "Search"}
             </button>
-            </div>
+          </div>
         </div>
 
-        {/* Results Table */}
-        <div className="bg-white shadow-md rounded-xl overflow-x-auto">
-            <table className="w-full border-collapse">
-            <thead className="bg-red-600 text-white">
-                <tr>
+        {/* Results */}
+        <div className="bg-gray-900 border border-gray-700 rounded-xl overflow-x-auto">
+          <table className="w-full table-auto text-white">
+            <thead className="bg-red-600">
+              <tr>
                 <th className="p-3 border">S.No</th>
                 <th className="p-3 border">Blood Bank</th>
                 <th className="p-3 border">Category</th>
                 <th className="p-3 border">Availability</th>
                 <th className="p-3 border">Last Updated</th>
-                <th className="p-3 border">Type</th>
-                </tr>
+                <th className="p-3 border">Component</th>
+              </tr>
             </thead>
             <tbody>
-                {stocks.length === 0 ? (
+              {stocks.length === 0 ? (
                 <tr>
-                    <td colSpan="6" className="text-center p-4">
+                  <td colSpan="6" className="p-4 text-center text-gray-400">
                     No data found.
-                    </td>
+                  </td>
                 </tr>
-                ) : (
-                stocks.map((stock, index) => (
-                    <tr key={index} className="hover:bg-gray-100">
-                    <td className="p-3 border">{index + 1}</td>
+              ) : (
+                stocks.map((stock, i) => (
+                  <tr key={i} className="hover:bg-red-900/20 transition">
+                    <td className="p-3 border text-center">{i + 1}</td>
                     <td className="p-3 border">{stock.bloodBank}</td>
                     <td className="p-3 border">{stock.category}</td>
                     <td className="p-3 border">{stock.availability}</td>
                     <td className="p-3 border">{stock.lastUpdated}</td>
-                    <td className="p-3 border">{stock.type}</td>
-                    </tr>
+                    <td className="p-3 border">{stock.component}</td>
+                  </tr>
                 ))
-                )}
+              )}
             </tbody>
-            </table>
+          </table>
         </div>
-        </div>
+      </div>
     </div>
   );
 };

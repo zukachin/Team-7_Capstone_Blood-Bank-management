@@ -1,82 +1,97 @@
-// client/pages/LoginPage.jsx
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { api, setAuthToken } from "../lib/api";
+import { useNavigate, useLocation } from "react-router-dom";
+import { api } from "../lib/api";
 
-export default function Login() {
+/**
+ * Login page that uses api.login and stores token via api.setToken
+ * On successful login navigates to previous location or /donor-portal
+ */
+
+export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/donor-portal";
+
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
-  const onChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setErr("");
     setLoading(true);
     try {
-      const { token, user } = await api.login(form); // ✅ backend returns token + user
-      setAuthToken(token);
-      localStorage.setItem("auth_user", JSON.stringify(user)); // ✅ persist user
-      navigate("/"); // redirect after login (can be /dashboard if needed)
-    } catch (error) {
-      setErr(error.message || "Login failed");
+      const res = await api.login({ email: form.email, password: form.password });
+      const token = res?.token || res?.data?.token || res?.accessToken || res?.access_token;
+      // if (token) {
+      //   api.setToken(token);
+      //   navigate(from, { replace: true });
+      // } else {
+      //   // If server didn't return token, still navigate to donor portal
+      //   navigate(from, { replace: true });
+      // }
+      if (token) {
+        api.setToken(token);
+      }
+      navigate("/", { replace: true });
+    } catch (e) {
+      console.error("Login failed:", e);
+      setErr(e.message || "Login failed");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black text-white">
-      <div className="w-full max-w-md px-6 py-12">
-        <h1 className="text-3xl font-bold mb-8 text-center">Login</h1>
+    <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
+      <div className="w-full max-w-md bg-neutral-900 p-6 rounded-xl shadow-lg">
+        <h2 className="text-2xl font-bold mb-4">Login</h2>
 
-        <form
-          onSubmit={onSubmit}
-          className="bg-gray-900/40 border border-gray-800 rounded-2xl p-6 space-y-5 shadow-lg"
-        >
-          {err && (
-            <div className="text-red-400 text-sm text-center bg-red-900/40 py-2 rounded-lg">
-              {err}
+        {err && <div className="text-red-400 mb-3">{err}</div>}
+
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div>
+            <label className="block mb-1">Email</label>
+            <input name="email" value={form.email} onChange={onChange} required
+              className="w-full bg-transparent border-b border-gray-600 py-2" />
+          </div>
+
+          <div>
+            <label className="block mb-1">Password</label>
+            <input
+              name="password"
+              type="password"
+              value={form.password}
+              onChange={onChange}
+              required
+              className="w-full bg-transparent border-b border-gray-600 py-2"
+            />
+
+            <div className="mt-2 text-right">
+              <button
+                type="button"
+                onClick={() => navigate("/forgot-password")}
+                className="text-sm text-red-400 hover:text-red-300 underline"
+              >
+                Forgot password?
+              </button>
             </div>
-          )}
+          </div>
 
-          <input
-            className="w-full bg-transparent border border-gray-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-600"
-            type="email"
-            name="email"
-            placeholder="Enter your email"
-            value={form.email}
-            onChange={onChange}
-            required
-          />
 
-          <input
-            className="w-full bg-transparent border border-gray-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-600"
-            type="password"
-            name="password"
-            placeholder="Enter your password"
-            value={form.password}
-            onChange={onChange}
-            required
-          />
+          <div className="flex items-center justify-between gap-4">
+            <button type="submit" disabled={loading}
+              className="bg-red-600 hover:bg-red-700 px-6 py-2 rounded-lg font-semibold">
+              {loading ? "Logging in..." : "Login"}
+            </button>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-60 px-6 py-3 rounded-lg font-medium"
-          >
-            {loading ? "Signing in..." : "Login"}
-          </button>
-
-          <p className="text-sm text-gray-400 text-center">
-            Don’t have an account?{" "}
-            <a href="/signup" className="text-red-400 hover:underline">
-              Sign Up
-            </a>
-          </p>
+            <button type="button" onClick={() => navigate("/signup")}
+              className="bg-transparent border border-gray-700 hover:border-red-500 px-4 py-2 rounded-lg">
+              Sign up
+            </button>
+          </div>
         </form>
       </div>
     </div>

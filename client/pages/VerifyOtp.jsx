@@ -2,6 +2,14 @@ import React, { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../lib/api";
 
+/**
+ * VerifyOtp page
+ * Accepts query params: userId and/or email
+ * Calls api.verifyOtp({ email, otp }) or api.verifyOtp({ userId, otp })
+ * On success, if response contains token -> save and navigate to donor portal
+ * Otherwise navigate to /login
+ */
+
 export default function VerifyOtp() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -10,80 +18,78 @@ export default function VerifyOtp() {
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
 
-  // email arrives via query params (from signup)
+  // userId/email can arrive via query params (from signup)
+  const userId = useMemo(() => params.get("userId") || "", [params]);
   const email = useMemo(() => params.get("email") || "", [params]);
 
-  const onVerify = async (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    setErr("");
-    setMsg("");
-    setLoading(true);
+    setErr(""); setMsg(""); setLoading(true);
     try {
-      await api.verifyOtp({ email, otp });
-      setMsg("Email verified! You can login now.");
-      setTimeout(() => navigate("/login"), 1000);
-    } catch (error) {
-      setErr(error.message || "Invalid OTP");
+      const payload = email ? { email, otp } : { userId, otp };
+      const res = await api.verifyOtp(payload);
+
+      // If backend returns a token after verification, store it and go to portal
+      const token = res?.token || res?.data?.token || res?.accessToken || res?.access_token;
+      // if (token) {
+      //   api.setToken(token);
+      //   navigate("/donor-portal", { replace: true });
+      //   return;
+      // }
+
+      // otherwise show success and redirect to login
+      setMsg("Verification successful. Please login.");
+      setTimeout(() => navigate("/login"), 1200);
+    } catch (e) {
+      console.error("Verify failed:", e);
+      setErr(e.message || "Failed to verify OTP");
     } finally {
       setLoading(false);
     }
   };
 
   const onResend = async () => {
-    setErr("");
-    setMsg("");
-    setLoading(true);
+    setErr(""); setMsg(""); setLoading(true);
     try {
-      await api.resendOtp({ email });
-      setMsg("OTP resent to your email.");
-    } catch (error) {
-      setErr(error.message || "Failed to resend OTP");
+      const payload = email ? { email } : { userId };
+      await api.resendOtp(payload);
+      setMsg("OTP resent. Check your email.");
+    } catch (e) {
+      console.error("Resend failed:", e);
+      setErr(e.message || "Failed to resend OTP");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="max-w-lg mx-auto px-6 py-16">
-        <h1 className="text-3xl font-bold mb-4">Verify your email</h1>
-        {email && (
-          <p className="text-gray-400 mb-6">
-            We sent a 6-digit code to{" "}
-            <span className="text-white">{email}</span>
-          </p>
-        )}
+    <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
+      <div className="w-full max-w-md bg-neutral-900 p-6 rounded-xl shadow-lg">
+        <h2 className="text-2xl font-bold mb-4">Verify your account</h2>
 
-        <form
-          onSubmit={onVerify}
-          className="bg-gray-900/40 border border-gray-800 rounded-2xl p-6 space-y-4"
-        >
-          {err && <div className="text-red-400 text-sm">{err}</div>}
-          {msg && <div className="text-green-400 text-sm">{msg}</div>}
+        {email && <p className="text-sm mb-2 text-gray-300">Verification email: <b>{email}</b></p>}
+        {msg && <div className="text-green-400 mb-3">{msg}</div>}
+        {err && <div className="text-red-400 mb-3">{err}</div>}
 
-          <input
-            className="w-full bg-transparent border border-gray-700 rounded-lg px-3 py-3 tracking-widest text-center"
-            placeholder="Enter 6-digit OTP"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            maxLength={6}
-            required
-          />
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div>
+            <label className="block mb-1">Enter OTP</label>
+            <input
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              className="w-full bg-transparent border-b border-gray-600 py-2"
+              required
+            />
+          </div>
 
           <div className="flex items-center gap-3">
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-red-600 hover:bg-red-700 disabled:opacity-60 px-6 py-2 rounded-lg"
-            >
+            <button type="submit" disabled={loading}
+              className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg">
               {loading ? "Verifying..." : "Verify"}
             </button>
-            <button
-              type="button"
-              onClick={onResend}
-              disabled={loading}
-              className="border border-gray-700 hover:border-red-500 px-6 py-2 rounded-lg"
-            >
+
+            <button type="button" onClick={onResend} disabled={loading}
+              className="bg-transparent border border-gray-700 hover:border-red-500 px-4 py-2 rounded-lg">
               Resend OTP
             </button>
           </div>

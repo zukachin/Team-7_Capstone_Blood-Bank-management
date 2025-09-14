@@ -1,4 +1,3 @@
-// src/components/HeroSection.jsx
 import React, { useRef, useEffect, useState } from 'react';
 import { gsap } from 'gsap';
 import { Button } from "./ui/button";
@@ -15,7 +14,7 @@ export function HeroSection() {
   const portalsRef = useRef(null);
   const imageRef = useRef(null);
 
-  // Chatbot states here only once
+  // Chatbot states
   const [messages, setMessages] = useState([
     { from: "bot", text: "Hi! I am your blood donation assistant." },
   ]);
@@ -24,34 +23,63 @@ export function HeroSection() {
   // Send message handler
   const sendMessage = async () => {
     if (!input.trim()) return;
-    setMessages((prev) => [...prev, { from: "user", text: input }]);
+
+    // Add user message
+    setMessages(prev => [...prev, { from: "user", text: input }]);
 
     try {
       const res = await fetch("http://localhost:8000/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: input }),
+        body: JSON.stringify({
+          thread_id: "123456",
+          query: input
+        }),
       });
+
       const data = await res.json();
-      setMessages((prev) => [...prev, { from: "bot", text: data.reply }]);
+
+      // Extract only the message string from response
+      const botReply = data.response || data.reply || JSON.stringify(data);
+
+      setMessages(prev => [...prev, { from: "bot", text: botReply }]);
     } catch (err) {
-      setMessages((prev) => [
+      setMessages(prev => [
         ...prev,
         { from: "bot", text: "Error connecting to agent." },
       ]);
     }
-    setInput("");
+
+    setInput(""); // Clear input after sending
   };
 
   // GSAP animations
   useEffect(() => {
     const tl = gsap.timeline();
-    tl.fromTo(headlineRef.current.children, { y: 100, opacity: 0 }, { y: 0, opacity: 1, stagger: 0.1, duration: 0.8, ease: "power3.out" })
-      .fromTo(subtitleRef.current, { y: 50, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7 }, "-=0.4")
-      .fromTo(buttonRef.current, { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5 }, "-=0.3")
-      .fromTo(statsRef.current.children, { y: 30, opacity: 0 }, { y: 0, opacity: 1, stagger: 0.15, duration: 0.6 }, "-=0.2")
-      .fromTo(portalsRef.current.children, { x: -50, opacity: 0 }, { x: 0, opacity: 1, stagger: 0.2, duration: 0.7 }, "-=0.3")
-      .fromTo(imageRef.current, { scale: 0.8, opacity: 0, rotation: -5 }, { scale: 1, opacity: 0.75, rotation: 0, duration: 1, ease: "elastic.out(1, 0.3)" }, "-=0.5");
+    tl.fromTo(headlineRef.current.children, 
+      { y: 100, opacity: 0 }, 
+      { y: 0, opacity: 1, stagger: 0.1, duration: 0.8, ease: "power3.out" }
+    )
+    .fromTo(subtitleRef.current, 
+      { y: 50, opacity: 0 }, 
+      { y: 0, opacity: 1, duration: 0.7 }, "-=0.4"
+    )
+    .fromTo(buttonRef.current, 
+      { scale: 0.8, opacity: 0 }, 
+      { scale: 1, opacity: 1, duration: 0.5 }, "-=0.3"
+    )
+    .fromTo(statsRef.current.children, 
+      { y: 30, opacity: 0 }, 
+      { y: 0, opacity: 1, stagger: 0.15, duration: 0.6 }, "-=0.2"
+    )
+    .fromTo(portalsRef.current.children, 
+      { x: -50, opacity: 0 }, 
+      { x: 0, opacity: 1, stagger: 0.2, duration: 0.7 }, "-=0.3"
+    )
+    .fromTo(imageRef.current, 
+      { scale: 0.8, opacity: 0, rotation: -5 }, 
+      { scale: 1, opacity: 0.75, rotation: 0, duration: 1, ease: "elastic.out(1, 0.3)" }, "-=0.5"
+    );
 
     gsap.to(imageRef.current, { y: 20, duration: 3, repeat: -1, yoyo: true, ease: "sine.inOut" });
   }, []);
@@ -67,8 +95,7 @@ export function HeroSection() {
               <div>& Patients — <span className="text-red-500">Instantly</span></div>
             </h1>
 
-            <p ref={subtitleRef} className="text-white text-base sm:text-lg font-normal max-w-xl mx-auto md:mx-0 text-center md:text-left"
-              style={{ fontFamily: "Lustria, -apple-system, Roboto, Helvetica, sans-serif" }}>
+            <p ref={subtitleRef} className="text-white text-base sm:text-lg font-normal max-w-xl mx-auto md:mx-0 text-center md:text-left">
               Every drop counts. Our platform ensures that hospitals can find,
               request, and track blood in real time.
             </p>
@@ -77,27 +104,26 @@ export function HeroSection() {
               <Button
                 onClick={() => navigate("/register-donor")}
                 className="bg-white text-black hover:bg-gray-100 rounded-sm px-6 py-2 sm:px-8 sm:py-3 text-base font-normal underline"
-                style={{ fontFamily: "Love Ya Like A Sister, -apple-system, Roboto, Helvetica, sans-serif" }}
               >
                 Schedule Your Donation
               </Button>
             </div>
 
-            {/*  Statistics */}
+            {/* Statistics */}
             <div ref={statsRef} className="space-y-4 pt-6">
               <div className="flex flex-col sm:flex-row items-center sm:space-x-4 bg-black/95 rounded px-4 py-3 text-center sm:text-left">
                 <span className="text-white text-lg font-bold">12,300</span>
-                <div className="h-6 w-px" style={{ backgroundColor: "#C21717" }}></div>
+                <div className="h-6 w-px bg-red-700"></div>
                 <span className="text-white text-lg font-bold" style={{ WebkitTextStroke: "1px #C21717" }}>Donor Registered</span>
               </div>
               <div className="flex flex-col sm:flex-row items-center sm:space-x-4 bg-lifelink-darkgray rounded px-4 py-3 text-center sm:text-left">
                 <span className="text-white text-lg font-bold">12,300</span>
-                <div className="h-6 w-px" style={{ backgroundColor: "#C21717" }}></div>
+                <div className="h-6 w-px bg-red-700"></div>
                 <span className="text-white text-lg font-bold" style={{ WebkitTextStroke: "1px #C21717" }}>Blood Units Collected</span>
               </div>
             </div>
 
-            {/*  Portals */}
+            {/* Portals */}
             <div ref={portalsRef} className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 pt-6">
               <button onClick={() => navigate("/donor-portal")} className="w-full bg-black/70 hover:bg-red-700 transition-colors rounded-lg p-4 text-center md:text-left space-y-2">
                 <h3 className="text-white text-xl md:text-3xl font-bold">Donor Portal</h3>
@@ -110,7 +136,7 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/*  Right Image */}
+          {/* Right Image */}
           <div className="flex justify-center md:justify-end -mt-32 md:-mt-100">
             <div className="relative w-full max-w-xs sm:max-w-sm md:max-w-md">
               <img ref={imageRef}
@@ -127,7 +153,7 @@ export function HeroSection() {
         </div>
       </div>
 
-      {/*  Chatbot Component */}
+      {/* Chatbot Component */}
       <Chatbot
         messages={messages}
         input={input}

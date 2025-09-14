@@ -209,28 +209,36 @@ async function login(req, res) {
     const { email, password } = req.body || {};
     const emailNorm = email.toLowerCase().trim();
 
-    const r = await pool.query('SELECT id, password, is_verified FROM users WHERE email = $1', [emailNorm]);
+    const r = await pool.query(
+      'SELECT id, name, email, password, is_verified FROM users WHERE email = $1',
+      [emailNorm]
+    );
+
     if (!r.rows.length) return res.status(400).json({ message: 'Invalid email or password' });
 
     const user = r.rows[0];
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.status(400).json({ message: 'Invalid email or password' });
-    if (!user.is_verified) return res.status(401).json({ message: 'Account not verified. Please verify using OTP.' });
+
+    if (!user.is_verified)
+      return res.status(401).json({ message: 'Account not verified. Please verify using OTP.' });
 
     const token = jwt.sign(
-  { userId: user.id, email: user.email }, // include userId here
-  JWT_SECRET,
-  { expiresIn: JWT_EXP }
-);
+      { userId: user.id, email: user.email },
+      JWT_SECRET,
+      { expiresIn: JWT_EXP }
+    );
 
-// return token to client
-res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
-    return res.json({ token });
+    res.json({
+      token,
+      user: { id: user.id, name: user.name, email: user.email },
+    });
   } catch (err) {
     console.error('login error', err);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
+
 
 // Forgot Password
 async function forgotPassword(req, res){

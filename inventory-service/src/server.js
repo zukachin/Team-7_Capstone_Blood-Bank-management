@@ -12,6 +12,9 @@ const apptRoutes = require('./routes/appointmentsRoutes');
 const userApptRoutes = require('./routes/userAppointmentRoutes');
 const campsRoutes = require('./routes/campRoutes');
 
+const donorRoutes = require("./routes/donorRoutes");
+const counselingRoutes = require("./routes/counselingRoutes");
+
 
 
 
@@ -34,6 +37,13 @@ app.use('/api/appointments', apptRoutes);
 app.use('/api/userappointments', userApptRoutes); 
 app.use("/api", bloodGroupRoutes);
 app.use('/api/camps', campsRoutes);
+app.use("/api/donors", donorRoutes);
+app.use("/api/counseling", counselingRoutes);
+
+
+
+
+
 app.get('/', (req, res) => res.json({ message: 'Inventory service running' }));
 
 const PORT = process.env.PORT || 4000;

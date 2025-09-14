@@ -29,3 +29,61 @@ exports.registerOrganizer = async (req, res) => {
     return res.status(500).json({ message: 'Server error' });
   }
 };
+
+
+exports.getMyOrganizer = async (req, res) => {
+  try {
+    const user = req.user;
+    if (!user || !user.user_id) return res.status(401).json({ message: 'Unauthenticated' });
+
+    const q = `SELECT * FROM camp_organizers WHERE user_id = $1 LIMIT 1`;
+    const r = await pool.query(q, [user.user_id]);
+    if (!r.rowCount) return res.status(404).json({ message: 'Organizer record not found' });
+
+    return res.json({ organizer: r.rows[0] });
+  } catch (err) {
+    console.error('getMyOrganizer', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
+exports.updateMyOrganizer = async (req, res) => {
+  try {
+    const user = req.user;
+    if (!user || !user.user_id) return res.status(401).json({ message: 'Unauthenticated' });
+
+    const { organization_name, contact_person, phone, email, address } = req.body;
+
+    // simple validation
+    if (phone && !/^[+\d\-\s()]{7,20}$/.test(phone)) {
+      return res.status(400).json({ message: 'Invalid phone format' });
+    }
+    if (email && !/^\S+@\S+\.\S+$/.test(email)) {
+      return res.status(400).json({ message: 'Invalid email format' });
+    }
+
+    const fields = [];
+    const params = [];
+    let idx = 1;
+    if (organization_name !== undefined) { fields.push(`organization_name = $${idx++}`); params.push(organization_name); }
+    if (contact_person !== undefined)  { fields.push(`contact_person = $${idx++}`); params.push(contact_person); }
+    if (phone !== undefined)           { fields.push(`phone = $${idx++}`); params.push(phone); }
+    if (email !== undefined)           { fields.push(`email = $${idx++}`); params.push(email); }
+    if (address !== undefined)         { fields.push(`address = $${idx++}`); params.push(address); }
+
+    if (!fields.length) return res.status(400).json({ message: 'No fields to update' });
+
+    fields.push(`updated_at = now()`);
+    const sql = `UPDATE camp_organizers SET ${fields.join(', ')} WHERE user_id = $${idx} RETURNING *`;
+    params.push(user.user_id);
+
+    const r = await pool.query(sql, params);
+    if (!r.rowCount) return res.status(404).json({ message: 'Organizer record not found' });
+
+    return res.json({ organizer: r.rows[0] });
+  } catch (err) {
+    console.error('updateMyOrganizer', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};

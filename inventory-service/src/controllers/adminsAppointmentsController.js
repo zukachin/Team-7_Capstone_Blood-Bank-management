@@ -73,7 +73,7 @@ exports.updateAppointmentStatus = async (req, res) => {
       if (!donorCheck.rowCount) {
         const u = (await pool.query('SELECT name,email,phone,age,gender,address,state_id,district_id FROM users WHERE id = $1 LIMIT 1', [userId])).rows[0] || {};
         await pool.query(
-          `INSERT INTO donors (user_id, first_name, last_name, dob, age, gender, mobile_no, email, address, state_id, district_id, centre_id, created_at)
+          `INSERT INTO donors (user_id, donor_name, dob, age, gender, mobile_no, email, address, state_id, district_id, centre_id, created_at)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12, now())`,
           [userId, u.name || null, null, null, u.age || null, u.gender || null, u.phone || null, u.email || null, u.address || null, u.state_id || null, u.district_id || null, appointment.centre_id || null]
         );

@@ -8,6 +8,12 @@ const { authenticate, authorize } = require('../middlewares/authMiddlewares'); /
 // Organizer: register / apply to be organizer (user provides details)
 router.post('/organizers', authenticateUserWithDonor, organizerCtrl.registerOrganizer);
 
+router.get('/organizers/me', authenticateUserWithDonor, organizerCtrl.getMyOrganizer);
+router.put('/organizers/me', authenticateUserWithDonor, organizerCtrl.updateMyOrganizer);
+
+
+
+
 // Organizer: create camp (must be organizer user)
 router.post('/camps', authenticateUserWithDonor, campsCtrl.createCamp);
 

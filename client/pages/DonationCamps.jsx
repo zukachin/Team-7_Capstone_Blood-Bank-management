@@ -11,7 +11,7 @@ export default function DonationCamps() {
 
   const baseUrl = import.meta.env.VITE_API_BASE_URL;
 
-  // ✅ Fetch all states
+  //  Fetch all states
   useEffect(() => {
     const fetchStates = async () => {
       try {
@@ -26,7 +26,7 @@ export default function DonationCamps() {
     fetchStates();
   }, [baseUrl]);
 
-  // ✅ Fetch districts when state changes
+  //  Fetch districts when state changes
   useEffect(() => {
     const fetchDistricts = async () => {
       if (!selectedState) {
@@ -47,7 +47,7 @@ export default function DonationCamps() {
     fetchDistricts();
   }, [selectedState, baseUrl]);
 
-  // ✅ Search donation camps
+  //  Search donation camps
   const handleSearch = async () => {
     try {
       setLoading(true);

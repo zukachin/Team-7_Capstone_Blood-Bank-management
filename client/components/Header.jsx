@@ -175,8 +175,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
-import { getAuthToken } from "../lib/api"; // ✅ check login status
-import UserMenu from "./UserMenu"; // ✅ dropdown menu
+import { getAuthToken } from "../lib/api"; //  check login status
+import UserMenu from "./UserMenu"; //  dropdown menu
 
 export function Header() {
   const isLoggedIn = !!getAuthToken();

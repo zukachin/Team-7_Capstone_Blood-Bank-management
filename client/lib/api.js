@@ -59,7 +59,7 @@ async function patch(path, data, token, extraHeaders = {}) {
       Authorization: `Bearer ${token}`,
       ...extraHeaders,
     },
-    body: JSON.stringify(data), // ✅ use data argument
+    body: JSON.stringify(data), //  use data argument
   });
 }
 

@@ -630,7 +630,7 @@ export default function ManageProfilePage() {
       alert("You are not logged in.");
       return;
     }
-    await api.updateProfile(profileData, token); // ✅ token is passed in
+    await api.updateProfile(profileData, token); //  token is passed in
     alert("Profile updated successfully!");
   } catch (err) {
     console.error("Update failed:", err);

@@ -15,27 +15,60 @@ export default function AdminCenters() {
 
   // Fetch centers
   useEffect(() => {
-    fetch("http://localhost:4000/api/centers")
-      .then((res) => res.json())
-      .then((data) => setCenters(data))
-      .catch((err) => console.error("Error fetching centers:", err));
-  }, []);
+    fetch("http://localhost:4001/api/centres")
+    .then((res) => res.json())
+    .then((data) => {
+      if (Array.isArray(data)) {
+        setCenters(data);
+      } else if (data?.centres && Array.isArray(data.centres)) {
+        setCenters(data.centres);
+      } else {
+        setCenters([]);
+      }
+    })
+    .catch((err) => {
+      console.error("Error fetching centres:", err);
+      setCenters([]);
+    });
+}, []);
 
   // Fetch states
   useEffect(() => {
     fetch("http://localhost:4000/api/locations/states")
-      .then((res) => res.json())
-      .then((data) => setStates(data))
-      .catch((err) => console.error("Error fetching states:", err));
-  }, []);
+    .then((res) => res.json())
+    .then((data) => {
+      if (Array.isArray(data)) {
+        setStates(data);
+      } else if (data?.states && Array.isArray(data.states)) {
+        setStates(data.states);
+      } else {
+        setStates([]);
+      }
+    })
+    .catch((err) => {
+      console.error("Error fetching states:", err);
+      setStates([]);
+    });
+}, []);
 
   // Fetch all districts once
   useEffect(() => {
     fetch("http://localhost:4000/api/locations/districts")
-      .then((res) => res.json())
-      .then((data) => setDistricts(data))
-      .catch((err) => console.error("Error fetching districts:", err));
-  }, []);
+    .then((res) => res.json())
+    .then((data) => {
+      if (Array.isArray(data)) {
+        setDistricts(data);
+      } else if (data?.districts && Array.isArray(data.districts)) {
+        setDistricts(data.districts);
+      } else {
+        setDistricts([]);
+      }
+    })
+    .catch((err) => {
+      console.error("Error fetching districts:", err);
+      setDistricts([]);
+    });
+}, []);
 
   // Filter districts when state changes
   useEffect(() => {

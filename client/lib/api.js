@@ -97,6 +97,9 @@ export const api = {
   // Locations (ADMIN_BASE)
   getStates: () => get(AUTH_BASE, "/locations/states"),
   getDistrictsByState: (stateId) => get(AUTH_BASE, `/locations/states/${stateId}/districts`),
+    // Admin Auth (ADMIN_BASE)
+  adminLogin: (payload) => post(ADMIN_BASE, "/auth/login", payload),
+
 
   // Centres & Camps (ADMIN_BASE)
   // ---------------- Centres & Camps ----------------

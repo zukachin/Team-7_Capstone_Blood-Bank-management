@@ -28,6 +28,14 @@ import CookiePolicy from "./pages/CookiePolicy";
 import Accessibility from "./pages/Accessibility";
 import TermsConditions from "./pages/TermsConditions";
 import CampRegistration from "./pages/CampRegistration";
+import AdminLogin from "./pages/admin/AdminLogin";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import DonorRegister from "./pages/admin/DonorRegister";
+import DonorCounseling from "./pages/admin/DonorCounseling";
+import AdminCenters from "./pages/admin/AdminCenters";
+import AdminAppointments from "./pages/admin/AdminAppointments";
+import { Header } from "../client/components/Header";
+import OrganizeCampPage from "./pages/OrganizeCampPage";
 
 
 
@@ -40,6 +48,7 @@ export default function App() {
         <Toaster />
         <Sonner />
         <BrowserRouter>
+        {/* <Header /> */}
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/looking-for-blood" element={<LookingForBlood />} />
@@ -66,7 +75,34 @@ export default function App() {
             <Route path="/cookie-policy" element={<CookiePolicy />} />
             <Route path="/accessibility" element={<Accessibility />} />
             <Route path="/terms-conditions" element={<TermsConditions />} />
-            <Route path="/camp-registration" element={<CampRegistration />} />
+            <Route path="/camp-registration" element={
+              
+                <CampRegistration />
+        
+            } />
+            <Route path="/organize-camp" element={
+              
+                <OrganizeCampPage />
+              
+            } />
+
+            //Admin
+            
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute adminOnly>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="donors/register" element={<DonorRegister />} />
+              <Route path="donors/counseling" element={<DonorCounseling />} />
+              <Route path="centers" element={<AdminCenters />} />
+              <Route path="appointments" element={<AdminAppointments />} />
+          
+            </Route>
             
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

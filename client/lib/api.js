@@ -7,6 +7,14 @@
 const AUTH_BASE = import.meta.env.VITE_API_BASE_AUTH || "http://localhost:4000";
 const ADMIN_BASE = import.meta.env.VITE_API_BASE_ADMIN || "http://localhost:4001";
 
+
+function setToken(token) {
+  try {
+    if (token) localStorage.setItem("auth_token", token);
+    else localStorage.removeItem("auth_token");
+  } catch (e) {}
+}
+
 function getToken() {
   try {
     return localStorage.getItem("auth_token");
@@ -15,12 +23,6 @@ function getToken() {
   }
 }
 
-function setToken(token) {
-  try {
-    if (token) localStorage.setItem("auth_token", token);
-    else localStorage.removeItem("auth_token");
-  } catch (e) {}
-}
 
 function authHeader() {
   const t = getToken();
@@ -97,15 +99,43 @@ export const api = {
   getDistrictsByState: (stateId) => get(AUTH_BASE, `/locations/states/${stateId}/districts`),
 
   // Centres & Camps (ADMIN_BASE)
+  // ---------------- Centres & Camps ----------------
   getCentresByDistrict: (districtId) =>
     get(ADMIN_BASE, `/centres/public/by-district?district_id=${encodeURIComponent(districtId)}`),
-  getCampsByDistrict: (districtId) =>
-    get(ADMIN_BASE, `/camps/public/by-district?district_id=${encodeURIComponent(districtId)}`),
-  searchCampsByState: (stateId) =>
-    get(ADMIN_BASE, `/camps/public/search?state_id=${encodeURIComponent(stateId)}`),
+
+  // ✅ Unified camp search — supports state_id, district_id, camp_date
+  searchApprovedCamps: ({ state_id, district_id, camp_date }) => {
+    const params = new URLSearchParams();
+    if (state_id) params.append("state_id", state_id);
+    if (district_id) params.append("district_id", district_id);
+    if (camp_date) params.append("camp_date", camp_date);
+    return get(ADMIN_BASE, `/camps/public/search?${params.toString()}`);
+  },
 
   // Appointments (ADMIN_BASE) - require authHeader()
   createAppointment: (payload) => post(ADMIN_BASE, "/appointments", payload, authHeader()),
   getMyAppointments: () => get(ADMIN_BASE, "/userappointments/mine", authHeader()),
   deleteAppointment: (id) => del(ADMIN_BASE, `/appointments/${id}`, authHeader()),
+
+  // Get notifications (pending donor registrations)
+getDonorNotifications: async (location) => {
+  const params = new URLSearchParams(location);
+  const res = await fetch(`${ADMIN_BASE}/admin/notifications?${params}`);
+  return res.json();
+},
+
+// Accept (acknowledge) a donor request
+acceptDonorNotification: async (donorId) => {
+  const res = await fetch(`${ADMIN_BASE}/admin/notifications/${donorId}/accept`, {
+    method: "POST",
+  });
+  return res.json();
+},
+
+// Get full donor profile
+getDonorProfile: async (donorId) => {
+  const res = await fetch(`${ADMIN_BASE}/admin/donors/${donorId}`);
+  return res.json();
+},
+
 };

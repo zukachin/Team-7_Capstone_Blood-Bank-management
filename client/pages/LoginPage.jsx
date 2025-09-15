@@ -32,8 +32,19 @@ export default function LoginPage() {
       //   // If server didn't return token, still navigate to donor portal
       //   navigate(from, { replace: true });
       // }
-      if (token) {
-        api.setToken(token);
+      if (!token) throw new Error("Login response did not include a token");
+
+      // Store token with your API helper
+      api.setToken(token);
+
+      // Store user info in localStorage for other pages to access
+      if (res?.user) {
+        localStorage.setItem("user", JSON.stringify(res.user));
+      } else if (res?.data?.user) {
+        localStorage.setItem("user", JSON.stringify(res.data.user));
+      } else {
+        // Fallback if user info is missing (optional)
+        localStorage.setItem("user", JSON.stringify({ email: form.email }));
       }
       navigate("/", { replace: true });
     } catch (e) {

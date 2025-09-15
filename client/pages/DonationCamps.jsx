@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { Calendar } from "lucide-react";
 import { api } from "../lib/api";
 
 export default function DonationCamps() {
@@ -13,72 +12,65 @@ export default function DonationCamps() {
   const [camps, setCamps] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch states on load
+  // Load states on page load
   useEffect(() => {
     api.getStates()
-    .then((res) => {
-    // Check if the result is an array or wrapped in an object
-    const result = Array.isArray(res) ? res : res?.states || [];
-    setStates(result);
-    })
-    .catch((err) => {
-    console.error("Error loading states", err);
-    setStates([]); // fallback
-    });
+      .then((res) => {
+        const result = Array.isArray(res) ? res : res?.states || [];
+        setStates(result);
+      })
+      .catch((err) => {
+        console.error("Error loading states", err);
+        setStates([]);
+      });
   }, []);
 
-  // Fetch districts when a state is selected
+  // Load districts on state select
   useEffect(() => {
     if (!selectedState) {
-    setDistricts([]);
-    setSelectedDistrict("");
-    return;
+      setDistricts([]);
+      setSelectedDistrict("");
+      return;
     }
     api.getDistrictsByState(selectedState)
-    .then((res) => {
-    const data = Array.isArray(res) ? res : res?.districts || [];
-    setDistricts(data);
-    })
-    .catch((err) => {
-    console.error("Error loading districts", err);
-    setDistricts([]); // fallback
-    });
+      .then((res) => {
+        const result = Array.isArray(res) ? res : res?.districts || [];
+        setDistricts(result);
+      })
+      .catch((err) => {
+        console.error("Error loading districts", err);
+        setDistricts([]);
+      });
   }, [selectedState]);
 
-  // Fetch camps (district preferred > state)
+  // Fetch camps
   const fetchCamps = async () => {
     setLoading(true);
+    setCamps([]);
     try {
-      let data = [];
+      const query = {};
+      if (selectedState) query.state_id = selectedState;
+      if (selectedDistrict) query.district_id = selectedDistrict;
+      if (date) query.camp_date = date.toISOString().split("T")[0];
 
-      if (selectedDistrict) {
-        data = await api.getCampsByDistrict(selectedDistrict);
-      } else if (selectedState) {
-        data = await api.searchCampsByState(selectedState);
-      }
+      const params = new URLSearchParams(query).toString();
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_ADMIN || "http://localhost:4001"}/api/camps/public/search?${params}`);
+      const result = await res.json();
 
-      if (Array.isArray(data)) {
-        // Optional: filter by selected date (if date chosen)
-        const filtered = date
-          ? data.filter((c) => new Date(c.camp_date).toDateString() === new Date(date).toDateString())
-          : data;
-        setCamps(filtered);
+      if (Array.isArray(result?.camps)) {
+        setCamps(result.camps);
+      } else if (Array.isArray(result)) {
+        setCamps(result);
       } else {
         setCamps([]);
       }
-    } catch (error) {
-      console.error("Failed to fetch camps:", error);
+    } catch (err) {
+      console.error("Failed to fetch camps:", err);
       setCamps([]);
     } finally {
       setLoading(false);
     }
   };
-
-  // Fetch camps on filter change
-  useEffect(() => {
-    fetchCamps();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedState, selectedDistrict]);
 
   return (
     <div className="container mx-auto px-4 py-12 min-h-screen bg-black text-white">
@@ -94,7 +86,13 @@ export default function DonationCamps() {
               onChange={(e) => setSelectedState(e.target.value)}
               className="w-full bg-black border-b border-gray-600 py-2 text-white"
             >
-              <option value="">Select State</option> {Array.isArray(states) && states.map((state) => ( <option key={state.id} value={state.id}> {state.state_name || state.name} </option> ))} </select>
+              <option value="">Select State</option>
+              {states.map((state) => (
+                <option key={state.id} value={state.id}>
+                  {state.state_name || state.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* District */}
@@ -105,23 +103,27 @@ export default function DonationCamps() {
               onChange={(e) => setSelectedDistrict(e.target.value)}
               className="w-full bg-black border-b border-gray-600 py-2 text-white"
             >
-              <option value="">Select district</option>
-              {Array.isArray(districts) && districts.map((d) => ( <option key={d.id} value={d.id}> {d.district_name || d.name} </option> ))}
+              <option value="">Select District</option>
+              {districts.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.district_name || d.name}
+                </option>
+              ))}
             </select>
           </div>
 
-          {/* Date (optional filter) */}
+          {/* Date (optional) */}
           <div>
             <label className="block mb-2 text-sm">Date</label>
             <DatePicker
               selected={date}
-              onChange={(date) => setDate(date)}
-              className="w-full bg-black border-b border-gray-600 py-2 text-white pl-10 rounded"
+              onChange={(d) => setDate(d)}
+              className="w-full bg-black border-b border-gray-600 py-2 text-white"
               placeholderText="Select date"
             />
           </div>
 
-          {/* Button */}
+          {/* Search Button */}
           <div className="flex items-end">
             <button
               onClick={fetchCamps}
@@ -132,7 +134,7 @@ export default function DonationCamps() {
           </div>
         </div>
 
-        {/* Camp Results */}
+        {/* Results */}
         <div>
           {loading ? (
             <p className="text-gray-400">Loading camps...</p>
@@ -142,15 +144,16 @@ export default function DonationCamps() {
             <ul className="space-y-4">
               {camps.map((camp) => (
                 <li
-                  key={camp.id || camp.camp_id}
+                  key={camp.camp_id || camp.id}
                   className="p-4 bg-gray-800 rounded-lg"
                 >
-                  <h3 className="font-bold text-lg text-red-400">{camp.camp_name}</h3>
-                  <p className="text-sm text-gray-300">
-                    {camp.location || camp.camp_location}
-                  </p>
+                  <h3 className="font-bold text-lg text-red-400">
+                    {camp.camp_name}
+                  </h3>
+                  <p className="text-sm text-gray-300">{camp.location}</p>
                   <p className="text-sm text-gray-400">
-                    {camp.district_name || camp.district}, {camp.state_name || camp.state}
+                    {camp.district_name || camp.district},{" "}
+                    {camp.state_name || camp.state}
                   </p>
                   {camp.camp_date && (
                     <p className="text-sm text-gray-400">

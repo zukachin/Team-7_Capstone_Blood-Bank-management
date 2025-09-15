@@ -15,10 +15,14 @@ const campsRoutes = require('./routes/campRoutes');
 const donorRoutes = require("./routes/donorRoutes");
 const counselingRoutes = require("./routes/counselingRoutes");
 
+const collectionsRoutes = require('./routes/collections');
+const testingRoutes = require('./routes/testing');
+const { startNotificationDispatcher } = require('./jobs/notificationDispatcher');
 
 
 
-
+// Start jobs
+startNotificationDispatcher();
 
 // require jobs so they start running
 require('./jobs/appointmentRemainderJob');
@@ -40,6 +44,8 @@ app.use('/api/camps', campsRoutes);
 app.use("/api/donors", donorRoutes);
 app.use("/api/counseling", counselingRoutes);
 
+app.use(collectionsRoutes);
+app.use(testingRoutes);
 
 
 

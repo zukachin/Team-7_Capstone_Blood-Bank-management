@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 dotenv.config();
 
+
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const centreRoutes = require('./routes/centreRoutes');
@@ -18,6 +19,13 @@ const counselingRoutes = require("./routes/counselingRoutes");
 const collectionsRoutes = require('./routes/collections');
 const testingRoutes = require('./routes/testing');
 const { startNotificationDispatcher } = require('./jobs/notificationDispatcher');
+const segregationRoutes = require('./routes/segregation');
+const inventoryRoutes = require('./routes/inventory');
+
+
+
+const publicinventoryRoutes = require('./routes/inventoryRoutes');
+
 
 
 
@@ -47,6 +55,10 @@ app.use("/api/counseling", counselingRoutes);
 app.use(collectionsRoutes);
 app.use(testingRoutes);
 
+app.use(segregationRoutes);
+app.use(inventoryRoutes)
+
+app.use('/api/inventory', publicinventoryRoutes);
 
 
 

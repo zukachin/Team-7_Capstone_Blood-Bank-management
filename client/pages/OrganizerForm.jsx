@@ -1,12 +1,12 @@
+// OrganizerForm.jsx
 import React from "react";
-
-const API_BASE = import.meta.env.VITE_API_BASE_ADMIN || "http://localhost:4001";
+import { api } from "../lib/api";
 
 export default function OrganizerForm({ onRegistered }) {
   async function handleSubmit(e) {
     e.preventDefault();
     const form = new FormData(e.target);
-    const token = localStorage.getItem("token");
+    const token = api.getToken();
     if (!token) {
       alert("You need to be logged in.");
       return;
@@ -21,21 +21,7 @@ export default function OrganizerForm({ onRegistered }) {
     };
 
     try {
-      const res = await fetch(`${API_BASE}/api/camps/organizers`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.message || "Failed to register organizer");
-      }
-
-      const data = await res.json();
+      const data = await api.registerOrganizer(body);
       alert("Organizer registered successfully!");
       onRegistered(data);
     } catch (err) {

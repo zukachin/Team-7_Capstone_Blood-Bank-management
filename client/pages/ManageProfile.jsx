@@ -1,4 +1,3 @@
-// client/pages/ManageProfile.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
@@ -6,32 +5,65 @@ import { api } from "../lib/api";
 export default function ManageProfilePage() {
   const [profileData, setProfileData] = useState(null);
   const [bloodGroups, setBloodGroups] = useState([]);
+  const [states, setStates] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
-  const token = localStorage.getItem("auth_token"); // JWT from login
 
-  // redirect if not logged in
+  // Redirect if not logged in
   useEffect(() => {
-    if (!token) {
+    if (!api.getToken()) {
       navigate("/login");
     }
-  }, [token, navigate]);
+  }, [navigate]);
 
+  // Load profile, states, blood groups
   useEffect(() => {
-  async function fetchProfile() {
-    try {
-      const data = await api.getProfile();
-      setProfileData(data);
-    } catch (err) {
-      console.error("Failed to load profile:", err);
-    } finally {
-      setLoading(false);
+    async function fetchData() {
+      try {
+        const [profile, bloodGroupsData, statesData] = await Promise.all([
+          api.getProfile(),
+          api.getBloodGroups(),
+          api.getStates(),
+        ]);
+
+        setProfileData(profile);
+        setBloodGroups(bloodGroupsData || []);
+        setStates(statesData?.states || statesData || []);
+
+        if (profile?.state_id) {
+          const districtsData = await api.getDistrictsByState(profile.state_id);
+          setDistricts(districtsData?.districts || districtsData || []);
+        }
+      } catch (err) {
+        console.error("Failed to load profile data:", err);
+      } finally {
+        setLoading(false);
+      }
     }
-  }
-  fetchProfile();
-}, []);
+    fetchData();
+  }, [navigate]);
+
+  // Load districts when state changes
+  useEffect(() => {
+    async function fetchDistricts() {
+      if (!profileData?.state_id) {
+        setDistricts([]);
+        return;
+      }
+
+      try {
+        const districtsData = await api.getDistrictsByState(profileData.state_id);
+        setDistricts(districtsData?.districts || districtsData || []);
+      } catch (err) {
+        console.error("Failed to load districts:", err);
+        setDistricts([]);
+      }
+    }
+
+    fetchDistricts();
+  }, [profileData?.state_id]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -42,21 +74,32 @@ export default function ManageProfilePage() {
   };
 
   const handleSave = async () => {
-  try {
-    await api.updateProfile(profileData);
-    alert("Profile updated successfully!");
-  } catch (err) {
-    console.error("Update failed:", err);
-    alert("Failed to update profile");
-  }
-};
+    setSaving(true);
+    try {
+      const payload = {
+        name: profileData.name,
+        phone: profileData.phone,
+        address: profileData.address,
+        age: Number(profileData.age),
+        gender: profileData.gender,
+        state_id: Number(profileData.state_id),
+        district_id: Number(profileData.district_id),
+        blood_group_id: Number(profileData.blood_group_id),
+      };
 
-  const handleBackToHome = () => {
-    navigate("/");
+      console.log("🚀 Payload being sent:", payload);
+      await api.updateProfile(payload);
+      alert("✅ Profile updated successfully!");
+    } catch (err) {
+      console.error("❌ Update failed:", err);
+      alert("❌ Failed to update profile. " + (err.message || ""));
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) return <div className="text-center py-10">Loading...</div>;
-  if (!profileData) return <div>No profile data</div>;
+  if (!profileData) return <div className="text-red-500 text-center">No profile data</div>;
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -65,122 +108,62 @@ export default function ManageProfilePage() {
           <h1 className="text-4xl font-bold mb-10 text-center">Manage Profile</h1>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-            {/* Left Column */}
+            {/* LEFT COLUMN */}
             <div className="space-y-6">
               <div>
                 <label className="block text-lg mb-2">Email:</label>
                 <div className="border-b border-gray-700 py-2 text-gray-400 text-lg opacity-60">
                   {profileData.email}
                 </div>
-                <p className="text-gray-500 text-sm">Email cannot be changed</p>
               </div>
 
-              <div>
-                <label className="block text-lg mb-2">Full Name:</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={profileData.name}
-                  onChange={handleInputChange}
-                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-lg mb-2">Phone:</label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={profileData.phone}
-                  onChange={handleInputChange}
-                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-lg mb-2">Address:</label>
-                <input
-                  type="text"
-                  name="address"
-                  value={profileData.address}
-                  onChange={handleInputChange}
-                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none"
-                />
-              </div>
+              <Input label="Full Name" name="name" value={profileData.name} onChange={handleInputChange} />
+              <Input label="Phone" name="phone" value={profileData.phone} onChange={handleInputChange} />
+              <Input label="Address" name="address" value={profileData.address} onChange={handleInputChange} />
             </div>
 
-            {/* Right Column */}
+            {/* RIGHT COLUMN */}
             <div className="space-y-6">
-              <div>
-                <label className="block text-lg mb-2">Age:</label>
-                <input
-                  type="number"
-                  name="age"
-                  value={profileData.age}
-                  onChange={handleInputChange}
-                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none"
-                />
-              </div>
+              <Input label="Age" name="age" type="number" value={profileData.age} onChange={handleInputChange} />
 
-              <div>
-                <label className="block text-lg mb-2">Gender:</label>
-                <select
-                  name="gender"
-                  value={profileData.gender}
-                  onChange={handleInputChange}
-                  className="w-full bg-black border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none"
-                >
-                  <option value="">Select Gender</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
+              <Select
+                label="Gender"
+                name="gender"
+                value={profileData.gender}
+                onChange={handleInputChange}
+                options={["Male", "Female", "Other"]}
+              />
 
-              <div>
-                <label className="block text-lg mb-2">State ID:</label>
-                <input
-                  type="text"
-                  name="state_id"
-                  value={profileData.state_id}
-                  onChange={handleInputChange}
-                  className="w-full bg-transparent border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none"
-                />
-              </div>
+              <Select
+                label="State"
+                name="state_id"
+                value={profileData.state_id}
+                onChange={handleInputChange}
+                options={states}
+                getOptionValue={(s) => s.id || s.state_id}
+                getOptionLabel={(s) => s.name || s.state_name}
+              />
 
-              <div>
-                <label className="block text-lg mb-2">District:</label>
-                <select
-                  name="district_id"
-                  value={profileData.district_id}
-                  onChange={handleInputChange}
-                  className="w-full bg-black border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none"
-                >
-                  <option value="">Select District</option>
-                  {districts.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.district_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <Select
+                label="District"
+                name="district_id"
+                value={profileData.district_id}
+                onChange={handleInputChange}
+                options={districts}
+                disabled={!profileData.state_id}
+                getOptionValue={(d) => d.id || d.district_id}
+                getOptionLabel={(d) => d.name || d.district_name}
+              />
 
-              <div>
-                <label className="block text-lg mb-2">Blood Group:</label>
-                <select
-                  name="blood_group_id"
-                  value={profileData.blood_group_id}
-                  onChange={handleInputChange}
-                  className="w-full bg-black border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none"
-                >
-                  <option value="">Select Blood Group</option>
-                  {bloodGroups.map((g) => (
-                    <option key={g.id} value={g.id}>
-                      {g.group_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <Select
+                label="Blood Group"
+                name="blood_group_id"
+                value={profileData.blood_group_id}
+                onChange={handleInputChange}
+                options={bloodGroups}
+                getOptionValue={(g) => g.id}
+                getOptionLabel={(g) => g.group_name}
+              />
             </div>
           </div>
 
@@ -196,14 +179,53 @@ export default function ManageProfilePage() {
 
           <div className="flex justify-center mt-8">
             <button
-              onClick={handleBackToHome}
+              onClick={() => navigate("/")}
               className="text-white hover:text-red-400 transition-colors text-lg"
             >
-              Back to home
+              Back to Home
             </button>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Reusable Input
+function Input({ label, name, value, onChange, type = "text" }) {
+  return (
+    <div>
+      <label className="block text-lg mb-2">{label}:</label>
+      <input
+        type={type}
+        name={name}
+        value={value ?? ""}
+        onChange={onChange}
+        className="w-full bg-transparent border-b border-gray-600 py-2 text-white"
+      />
+    </div>
+  );
+}
+
+// Reusable Select
+function Select({ label, name, value, onChange, options = [], getOptionValue, getOptionLabel, disabled }) {
+  return (
+    <div>
+      <label className="block text-lg mb-2">{label}:</label>
+      <select
+        name={name}
+        value={value ?? ""}
+        onChange={onChange}
+        disabled={disabled}
+        className="w-full bg-black border-b border-gray-600 py-2 text-white"
+      >
+        <option value="">Select {label}</option>
+        {options.map((opt) => (
+          <option key={getOptionValue ? getOptionValue(opt) : opt} value={getOptionValue ? getOptionValue(opt) : opt}>
+            {getOptionLabel ? getOptionLabel(opt) : opt}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }

@@ -3,16 +3,24 @@ import { Navigate, useLocation } from "react-router-dom";
 import { api } from "../lib/api";
 
 /**
- * ProtectedRoute: wraps children and redirects to /login when not authenticated
+ * ProtectedRoute: Wraps routes and restricts access based on authentication
  *
- * Usage:
- * <Route path="/donor-portal" element={<ProtectedRoute><DonorPortalPage/></ProtectedRoute>} />
+ * Props:
+ * - adminOnly (boolean): If true, requires adminToken, else checks for user token.
  */
-export default function ProtectedRoute({ children }) {
-  const token = api.getToken();
+export default function ProtectedRoute({ children, adminOnly = false }) {
+  const token = adminOnly ? api.getAdminToken() : api.getToken();
   const location = useLocation();
+
   if (!token) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return (
+      <Navigate
+        to={adminOnly ? "/admin/login" : "/login"}
+        state={{ from: location }}
+        replace
+      />
+    );
   }
+
   return children;
 }

@@ -1,10 +1,9 @@
+// OrganizeCampPage.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import OrganizerForm from "./OrganizerForm";
 import CampForm from "./CampForm";
 import { api } from "../lib/api";
-
-const API_BASE = import.meta.env.VITE_API_BASE_ADMIN || "http://localhost:4001";
 
 export default function OrganizeCampPage() {
   const [organizer, setOrganizer] = useState(null);
@@ -17,40 +16,22 @@ export default function OrganizeCampPage() {
       const storedUser = localStorage.getItem("user");
       const token = api.getToken();
 
-      console.log("Stored User:", storedUser);
-      console.log("Stored Token:", token);
-
       if (!storedUser || !token) {
-        navigate("/login");
-        return;
-      }
-
-      let user;
-      try {
-        user = JSON.parse(storedUser);
-      } catch {
         navigate("/login");
         return;
       }
 
       try {
         setLoading(true);
-        const res = await fetch(`${API_BASE}/api/camps/organizers/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (res.status === 404) {
-          // Not an organizer yet
-          setOrganizer(null);
-        } else if (!res.ok) {
-          const errData = await res.json();
-          throw new Error(errData.message || "Failed to fetch organizer");
-        } else {
-          const data = await res.json();
-          setOrganizer(data);
-        }
+        const data = await api.getOrganizerProfile();
+        setOrganizer(data);
       } catch (err) {
-        setError(err.message);
+        if (err.status === 404) {
+          // User is not an organizer yet
+          setOrganizer(null);
+        } else {
+          setError(err.message);
+        }
       } finally {
         setLoading(false);
       }

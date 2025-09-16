@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { api } from "../../lib/api";
 
 export default function AdminAppointments() {
   const [appointments, setAppointments] = useState([]);
@@ -7,24 +8,19 @@ export default function AdminAppointments() {
     fetchAppointments();
   }, []);
 
-  const fetchAppointments = () => {
-    fetch("http://localhost:4000/api/appointments")
-      .then((res) => res.json())
-      .then((data) => setAppointments(data))
-      .catch((err) => console.error("Error fetching appointments:", err));
+  const fetchAppointments = async () => {
+    try {
+      const data = await api.getAdminAppointments();
+      setAppointments(data.appointments || []);
+    } catch (err) {
+      console.error("Error fetching appointments:", err);
+    }
   };
 
   const handleStatusChange = async (id, status) => {
     try {
-      const res = await fetch(`http://localhost:4000/api/appointments/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: status }),
-      });
-      if (res.ok) {
-        // Refresh the appointments list after updating status
-        fetchAppointments();
-      }
+      await api.updateAppointmentStatus(id, { status });
+      fetchAppointments(); // refresh
     } catch (err) {
       console.error("Error updating status:", err);
     }
@@ -33,13 +29,8 @@ export default function AdminAppointments() {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this appointment?")) return;
     try {
-      const res = await fetch(`http://localhost:4000/api/appointments/${id}`, { 
-        method: "DELETE" 
-      });
-      if (res.ok) {
-        // Refresh the appointments list after deletion
-        fetchAppointments();
-      }
+      await api.deleteAppointment(id);
+      fetchAppointments();
     } catch (err) {
       console.error("Error deleting appointment:", err);
     }
@@ -49,7 +40,6 @@ export default function AdminAppointments() {
     <div className="p-6">
       <h1 className="text-2xl font-bold text-red-600 mb-6">Appointment Schedules</h1>
 
-      {/* Appointments Table */}
       <div className="bg-gradient-to-br from-gray-900 to-black text-white rounded-2xl shadow-xl p-6 overflow-x-auto">
         <table className="w-full border-collapse text-sm">
           <thead>
@@ -80,17 +70,20 @@ export default function AdminAppointments() {
                 <tr key={a.appointment_id} className="hover:bg-gray-800">
                   <td className="p-4 border">{a.appointment_id}</td>
                   <td className="p-4 border">{a.user_id}</td>
+                  <td className="p-4 border">{a.state_id}</td>
                   <td className="p-4 border">{a.district_id}</td>
                   <td className="p-4 border">{a.centre_id}</td>
                   <td className="p-4 border">{a.appointment_date}</td>
                   <td className="p-4 border">{a.appointment_time}</td>
                   <td className="p-4 border">{a.weight}</td>
-                  <td className="p-4 border">{a.under_medication}</td>
+                  <td className="p-4 border">{a.under_medication ? "Yes" : "No"}</td>
                   <td className="p-4 border">{a.last_donation_date || "-"}</td>
                   <td className="p-4 border">
                     <select
                       value={a.status}
-                      onChange={(e) => handleStatusChange(a.appointment_id, e.target.value)}
+                      onChange={(e) =>
+                        handleStatusChange(a.appointment_id, e.target.value)
+                      }
                       className="bg-gray-800 text-white rounded p-1 w-full"
                     >
                       <option value="Pending">Pending</option>
@@ -117,7 +110,7 @@ export default function AdminAppointments() {
               ))
             ) : (
               <tr>
-                <td colSpan="17" className="p-3 text-center text-gray-500">
+                <td colSpan="18" className="p-3 text-center text-gray-500">
                   No appointments available.
                 </td>
               </tr>

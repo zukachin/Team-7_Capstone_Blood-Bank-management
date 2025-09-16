@@ -52,6 +52,47 @@ exports.registerSuperAdmin = async (req, res) => {
  * POST /auth/login
  * Body: { email, password }
  */
+// exports.login = async (req, res) => {
+//   try {
+//     const { email, password } = req.body;
+//     if (!email || !password) return res.status(400).json({ message: 'email and password required' });
+
+//     const sql = `
+//       SELECT a.admin_id, a.password_hash, a.centre_id, r.role_name
+//       FROM admins a
+//       LEFT JOIN roles r ON a.role_id = r.role_id
+//       WHERE lower(a.email) = lower($1) LIMIT 1
+//     `;
+//     const result = await pool.query(sql, [email]);
+//     if (!result.rowCount) return res.status(401).json({ message: 'Invalid credentials' });
+
+//     const user = result.rows[0];
+//     const match = await bcrypt.compare(password, user.password_hash);
+//     if (!match) return res.status(401).json({ message: 'Invalid credentials' });
+
+//     // create token
+//     const payload = { id: user.admin_id };
+//     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+
+//     // update last_login
+//     await pool.query(`UPDATE admins SET last_login = now() WHERE admin_id = $1`, [user.admin_id]);
+
+//     // return token and small user meta
+//     return res.json({
+//       token,
+//       user: {
+//         id: user.admin_id,
+//         role: user.role_name || null,
+//         centreId: user.centre_id
+//       }
+//     });
+//   } catch (err) {
+//     console.error('login error:', err);
+//     return res.status(500).json({ message: 'Server error', error: err.message });
+//   }
+// };
+
+
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -70,8 +111,8 @@ exports.login = async (req, res) => {
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) return res.status(401).json({ message: 'Invalid credentials' });
 
-    // create token
-    const payload = { id: user.admin_id };
+    // ✅ FIX: Use admin_id in token payload
+    const payload = { admin_id: user.admin_id };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 
     // update last_login

@@ -7,8 +7,8 @@ dotenv.config();
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const centreRoutes = require('./routes/centreRoutes');
-const locationRoutes= require('./routes/locationRoutes');
-const bloodGroupRoutes=require('./routes/bloodGroupRoutes');
+const locationRoutes = require('./routes/locationRoutes');
+const bloodGroupRoutes = require('./routes/bloodGroupRoutes');
 const apptRoutes = require('./routes/appointmentsRoutes');
 const userApptRoutes = require('./routes/userAppointmentRoutes');
 const campsRoutes = require('./routes/campRoutes');
@@ -37,7 +37,24 @@ require('./jobs/appointmentRemainderJob');
 require('./jobs/campReminder')
 
 const app = express();
-app.use(cors());
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:5175"
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like Postman, curl)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+}));
+
 app.use(express.json());
 
 
@@ -46,7 +63,7 @@ app.use('/api/admins', adminRoutes);
 app.use('/api/centres', centreRoutes);
 app.use('/api/locations', locationRoutes);
 app.use('/api/appointments', apptRoutes);
-app.use('/api/userappointments', userApptRoutes); 
+app.use('/api/userappointments', userApptRoutes);
 app.use("/api", bloodGroupRoutes);
 app.use('/api/camps', campsRoutes);
 app.use("/api/donors", donorRoutes);

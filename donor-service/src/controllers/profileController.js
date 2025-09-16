@@ -8,20 +8,17 @@ const pool = require("../db/pool");
 exports.getProfile = async (req, res) => {
   try {
     const userId = req.user && req.user.userId;
-    if (!userId) return res.status(401).json({ message: "Unauthorized: No user in token" });
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized: No user in token" });
+    }
 
-    const q = `
-      SELECT u.id, u.name, u.email, u.phone, u.address, u.age, u.gender, u.is_verified,
-             bg.id as blood_group_id, bg.group_name as blood_group,
-             u.created_at, u.updated_at
-      FROM users u
-      LEFT JOIN blood_groups bg ON u.blood_group_id = bg.id
-      WHERE u.id = $1
-      LIMIT 1
-    `;
+    const q = `SELECT u.id, u.name, u.email, u.phone, u.address, u.age, u.gender, u.is_verified, bg.id AS blood_group_id, bg.group_name AS blood_group, u.state_id, s.state_name AS state_name, u.district_id, d.district_name AS district_name, u.created_at, u.updated_at FROM users u LEFT JOIN blood_groups bg ON u.blood_group_id = bg.id LEFT JOIN states s ON u.state_id = s.state_id LEFT JOIN districts d ON u.district_id = d.district_id WHERE u.id = $1 LIMIT 1`;
+
     const result = await pool.query(q, [userId]);
 
-    if (!result.rows.length) return res.status(404).json({ message: "User not found" });
+    if (!result.rows.length) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
     res.json(result.rows[0]);
   } catch (err) {

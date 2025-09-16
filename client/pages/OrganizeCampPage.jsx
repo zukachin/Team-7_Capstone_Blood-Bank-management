@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import OrganizerForm from "./OrganizerForm";
-import CampForm from "./CampForm";
 import { api } from "../lib/api";
 
 export default function OrganizeCampPage() {
@@ -45,11 +44,29 @@ export default function OrganizeCampPage() {
 
   return (
     <div className="p-6 text-white">
-      {!organizer ? (
-        <OrganizerForm onRegistered={(org) => setOrganizer(org)} />
-      ) : (
-        <CampForm organizerId={organizer.organizer_id || organizer.id} />
-      )}
-    </div>
+    {!organizer ? (
+      <OrganizerForm
+        onRegistered={(org) => {
+          setOrganizer(org);
+          navigate("/camp-registration");
+        }}
+      />
+    ) : (
+      <p>You are already registered as an organizer. <br /> Go to <a className="underline text-blue-400" href="/camp-registration">Camp Registration</a>.</p>
+    )}
+  </div>
+
+  // <div className="p-6 bg-neutral-900 text-white rounded-lg max-w-xl mx-auto">
+  //     {organizer ? (
+  //       <p className="text-green-400 font-semibold text-center text-lg">
+  //         You are already registered as an organizer.
+  //       </p>
+  //     ) : (
+  //       <p className="text-yellow-400 font-semibold text-center text-lg">
+  //         You are not registered as an organizer yet. Please register first.
+  //       </p>
+  //     )}
+  //     {/* Additional organizer dashboard or registration link here */}
+  //   </div>
   );
 }

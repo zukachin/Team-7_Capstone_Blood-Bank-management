@@ -270,8 +270,30 @@ export const api = {
   getCentresByDistrict: (districtId) =>
     get(ADMIN_BASE, `/centres/public/by-district?district_id=${encodeURIComponent(districtId)}`),
   registerOrganizer: (payload) =>
-    post(ADMIN_BASE, "/camps/organizers", payload, authHeader(ADMIN_BASE)),
-  getOrganizerProfile: () => get(ADMIN_BASE, "/camps/organizers/me", authHeader(ADMIN_BASE)),
+    post(ADMIN_BASE, "/camps/organizers", payload, authHeader(AUTH_BASE)),
+  
+  // getOrganizerProfile: () => get(ADMIN_BASE, "/camps/organizers/me", authHeader(AUTH_BASE)),
+  getOrganizerProfile: async function () {
+    const response = await fetch("http://localhost:4001/api/camps/organizers/me", {
+      headers: {
+        Authorization: `Bearer ${this.getToken()}`, // or api.getToken() depending on your context
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      if (response.status === 404) {
+        const error = new Error("Organizer record not found");
+        error.status = 404;
+        throw error;
+      }
+      throw new Error(errorText || "Failed to fetch organizer profile");
+    }
+
+    return await response.json();
+  },
+  getOrganizerCamps: () => get(ADMIN_BASE, "/camps/organizers/me/camps", authHeader(AUTH_BASE)),
   createCamp: (payload) => post(ADMIN_BASE, "/camps/camps", payload, authHeader(ADMIN_BASE)),
 
   searchApprovedCamps: ({ state_id, district_id, camp_date }) => {

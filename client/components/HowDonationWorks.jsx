@@ -74,9 +74,9 @@ export function HowDonationWorks() {
 
   const impactStats = [
     { value: "1", label: "donation can save up to 3 lives" },
-    { value: "36", label: "donations needed every minute in the US" },
-    { value: "4.5M", label: "Americans would die yearly without donations" },
-    { value: "65%", label: "of the population will need blood in their lifetime" }
+    { value: "~118.5 M", label: "donations are collected worldwide each year" },
+    { value: "Millions", label: "would die without donated blood" },
+    { value: "25%", label: "of the population will need blood in their lifetime" }
   ];
 
   useEffect(() => {

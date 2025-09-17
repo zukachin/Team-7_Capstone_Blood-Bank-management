@@ -137,12 +137,7 @@ const DonorPortalPage = () => {
               <Link to="/" className="text-blood-primary font-bold text-2xl">LIFE LINK</Link>
             </div>
 
-            <div className="flex space-x-9">
-              <button onClick={() => handleNavigation("/")} className="text-red-500 hover:text-red-400 text-xl">Home</button>
-              <button onClick={() => handleNavigation("/looking-for-blood")} className="hover:text-red-400 text-xl">Looking for Blood</button>
-              <button onClick={() => handleNavigation("/want-to-donate")} className="hover:text-red-400 text-xl">Want to donate Blood</button>
-              <button onClick={() => handleNavigation("/blood-bank-dashboard")} className="hover:text-red-400 text-xl">Blood Bank Dashboard</button>
-            </div>
+  
           </div>
         </div>
       </header>
@@ -162,7 +157,7 @@ const DonorPortalPage = () => {
               <p><b>Email:</b> {profile.email}</p>
               <p><b>Phone:</b> {profile.phone}</p>
               <p><b>Gender:</b> {profile.gender}</p>
-              <p><b>Blood Group:</b> {profile.blood_group_name || "N/A"}</p>
+              <p><b>Blood Group:</b> {profile.blood_group || "N/A"}</p>
               <p><b>Address:</b> {profile.address}</p>
             </div>
           )}

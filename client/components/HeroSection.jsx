@@ -140,7 +140,7 @@ export function HeroSection() {
               </button>
 
               <button
-                onClick={() => navigate("/inventory-portal")}
+                onClick={() => navigate("/admin/login")}
                 className="w-full bg-black/70 hover:bg-red-700 transition-colors rounded-lg p-4 text-center md:text-left space-y-2"
               >
                 <h3 className="text-white text-xl md:text-3xl font-bold" style={{ fontFamily: "Lora, -apple-system, Roboto, Helvetica, sans-serif" }}>Inventory Portal</h3>

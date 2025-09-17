@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 
-// You may use a UI library modal or build your own simple one
+// Confirmation modal
 function ConfirmModal({ visible, title, message, onConfirm, onCancel }) {
   if (!visible) return null;
   return (
@@ -11,24 +11,15 @@ function ConfirmModal({ visible, title, message, onConfirm, onCancel }) {
         <h3 className="text-xl font-semibold mb-4">{title}</h3>
         <p className="mb-6">{message}</p>
         <div className="flex justify-end gap-4">
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 rounded-lg bg-gray-300 hover:bg-gray-400"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
-          >
-            Confirm
-          </button>
+          <button onClick={onCancel} className="px-4 py-2 rounded-lg bg-gray-300 hover:bg-gray-400">Cancel</button>
+          <button onClick={onConfirm} className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700">Confirm</button>
         </div>
       </div>
     </div>
   );
 }
 
+// Toast component
 function Toast({ message, onClose }) {
   useEffect(() => {
     const timer = setTimeout(onClose, 4000);
@@ -36,18 +27,9 @@ function Toast({ message, onClose }) {
   }, [onClose]);
 
   return (
-    <div
-      className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50"
-      role="alert"
-    >
+    <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50">
       <span>{message}</span>
-      <button
-        onClick={onClose}
-        className="ml-3 font-bold hover:text-gray-200"
-        aria-label="Close notification"
-      >
-        ×
-      </button>
+      <button onClick={onClose} className="ml-3 font-bold hover:text-gray-200" aria-label="Close notification">×</button>
     </div>
   );
 }
@@ -57,7 +39,7 @@ export default function CampRegistration() {
 
   const [form, setForm] = useState({
     camp_name: "",
-    organizer_id: "", // Will be set from fetched organizer profile
+    organizer_id: "",
     state_id: "",
     district_id: "",
     centre_id: "",
@@ -80,17 +62,14 @@ export default function CampRegistration() {
   const [toastMessage, setToastMessage] = useState("");
   const [confirmVisible, setConfirmVisible] = useState(false);
 
-  // Redirect if not logged in
   useEffect(() => {
     if (!api.getToken()) {
       navigate("/login", { replace: true });
     }
   }, [navigate]);
 
-  // Load organizer profile
   useEffect(() => {
-    api
-      .getOrganizerProfile()
+    api.getOrganizerProfile()
       .then((data) => {
         if (data?.organizer) {
           setOrganizer(data.organizer);
@@ -102,97 +81,53 @@ export default function CampRegistration() {
           fetchExistingCamps();
         } else {
           const m = "Organizer profile not found. Please register your organizer profile first.";
-          setOrganizer(null);
           setErr(m);
           setToastMessage(m);
         }
       })
       .catch((error) => {
+        const m = "Organizer profile not found. Please register your organizer profile first.";
         if (error.status === 404) {
-          const m = "Organizer profile not found. Please register your organizer profile first.";
           setErr(m);
           setToastMessage(m);
-          setOrganizer(null);
         } else {
           console.error("Failed to fetch organizer profile:", error);
           setErr("Failed to load organizer profile");
           setToastMessage("Failed to load organizer profile. Please try again later.");
-          setOrganizer(null);
         }
       });
   }, []);
 
   const fetchExistingCamps = async () => {
     try {
-      const response = await fetch(
-        "http://localhost:4001/api/camps/organizers/me/camps",
-        {
-          headers: {
-            Authorization: `Bearer ${api.getToken()}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      if (!response.ok) throw new Error("Failed to fetch camps");
-
-      const data = await response.json();
-      setExistingCamps(data.camps || []);
+      const data = await api.getOrganizerCamps();
+      setExistingCamps(data?.camps || []);
     } catch (error) {
       console.error("Error fetching existing camps:", error);
     }
   };
 
   useEffect(() => {
-    api
-      .getStates()
-      .then((res) => {
-        if (Array.isArray(res)) {
-          setStates(res);
-        } else if (res?.states && Array.isArray(res.states)) {
-          setStates(res.states);
-        } else {
-          setStates([]);
-        }
-      })
-      .catch((error) => console.error("Error loading states:", error));
+    api.getStates().then((res) => {
+      if (Array.isArray(res)) setStates(res);
+      else if (res?.states && Array.isArray(res.states)) setStates(res.states);
+    }).catch(console.error);
   }, []);
 
   useEffect(() => {
-    if (!form.state_id) {
-      setDistricts([]);
-      return;
-    }
-    api
-      .getDistrictsByState(form.state_id)
-      .then((res) => {
-        if (Array.isArray(res)) {
-          setDistricts(res);
-        } else if (res?.districts && Array.isArray(res.districts)) {
-          setDistricts(res.districts);
-        } else {
-          setDistricts([]);
-        }
-      })
-      .catch((error) => console.error("Error loading districts:", error));
+    if (!form.state_id) return setDistricts([]);
+    api.getDistrictsByState(form.state_id).then((res) => {
+      if (Array.isArray(res)) setDistricts(res);
+      else if (res?.districts && Array.isArray(res.districts)) setDistricts(res.districts);
+    }).catch(console.error);
   }, [form.state_id]);
 
   useEffect(() => {
-    if (!form.district_id) {
-      setCentres([]);
-      return;
-    }
-    api
-      .getCentresByDistrict(form.district_id)
-      .then((res) => {
-        if (Array.isArray(res)) {
-          setCentres(res);
-        } else if (res?.centres && Array.isArray(res.centres)) {
-          setCentres(res.centres);
-        } else {
-          setCentres([]);
-        }
-      })
-      .catch((error) => console.error("Error loading centres:", error));
+    if (!form.district_id) return setCentres([]);
+    api.getCentresByDistrict(form.district_id).then((res) => {
+      if (Array.isArray(res)) setCentres(res);
+      else if (res?.centres && Array.isArray(res.centres)) setCentres(res.centres);
+    }).catch(console.error);
   }, [form.district_id]);
 
   const handleChange = (e) => {
@@ -205,7 +140,6 @@ export default function CampRegistration() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Show confirmation before actual submit
     setConfirmVisible(true);
   };
 
@@ -214,6 +148,7 @@ export default function CampRegistration() {
     setErr("");
     setMsg("");
     setLoading(true);
+
     try {
       let formattedTime = form.camp_time;
       if (formattedTime && formattedTime.split(":").length === 2) {
@@ -222,25 +157,46 @@ export default function CampRegistration() {
 
       const payload = {
         organizer_id: Number(form.organizer_id),
-        camp_name: form.camp_name,
+        camp_name: form.camp_name?.trim(),
         centre_id: Number(form.centre_id),
         state_id: Number(form.state_id),
         district_id: Number(form.district_id),
-        location: form.location,
+        location: form.location?.trim(),
         camp_date: form.camp_date,
         camp_time: formattedTime,
         has_venue: !!form.has_venue,
-        description: form.description,
+        description: form.description?.trim(),
       };
 
-      const response = await api.createCamp(payload);
+      console.log("Submitting payload:", payload);
 
-      // Toast or notification
+      // Validate required fields
+      const requiredFields = [
+        "organizer_id",
+        "camp_name",
+        "centre_id",
+        "state_id",
+        "district_id",
+        "location",
+        "camp_date"
+      ];
+
+      const missingFields = requiredFields.filter((key) => {
+        const value = payload[key];
+        return value === undefined || value === null || value === "" || Number.isNaN(value);
+      });
+
+      if (missingFields.length > 0) {
+        setErr("Please fill in all required fields.");
+        setToastMessage(`Missing fields: ${missingFields.join(", ")}`);
+        setLoading(false);
+        return;
+      }
+
+      await api.createCamp(payload);
       setToastMessage("Camp registered successfully! Status: Pending.");
-
       setMsg("Camp registered successfully!");
 
-      // Reset form except organizer_id
       setForm((prev) => ({
         ...prev,
         camp_name: "",
@@ -254,14 +210,9 @@ export default function CampRegistration() {
         description: "",
       }));
 
-      setCentres([]);
       setDistricts([]);
-
+      setCentres([]);
       fetchExistingCamps();
-
-      // TODO: Backend should send email to organizer here
-      // e.g. server side: sendEmail(organizer.email, "Your camp has been registered and is pending approval", ...)
-
     } catch (error) {
       console.error("Failed to register camp:", error);
       setErr(error.message || "Failed to register camp");
@@ -275,7 +226,7 @@ export default function CampRegistration() {
     setConfirmVisible(false);
   };
 
-  const organizerProfileMissing = !organizer && err === "Organizer profile not found.";
+  const organizerProfileMissing = !organizer && err.includes("Organizer profile not found");
 
   return (
     <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
@@ -312,15 +263,14 @@ export default function CampRegistration() {
                   <div className="flex justify-between items-center mb-2">
                     <h4 className="text-lg font-semibold">{camp.camp_name}</h4>
                     <span
-                      className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                        camp.status === "approved"
+                      className={`px-3 py-1 rounded-full text-sm font-semibold ${camp.status === "approved"
                           ? "bg-green-600 text-green-100"
                           : camp.status === "pending"
-                          ? "bg-yellow-500 text-yellow-900"
-                          : camp.status === "rejected"
-                          ? "bg-red-600 text-red-100"
-                          : "bg-gray-600 text-gray-100"
-                      }`}
+                            ? "bg-yellow-500 text-yellow-900"
+                            : camp.status === "rejected"
+                              ? "bg-red-600 text-red-100"
+                              : "bg-gray-600 text-gray-100"
+                        }`}
                     >
                       {camp.status.charAt(0).toUpperCase() +
                         camp.status.slice(1)}
@@ -421,12 +371,13 @@ export default function CampRegistration() {
               </option>
             ) : (
               centres.map((c) => (
-                <option key={c.id} value={c.id}>
+                <option key={c.centre_id} value={c.centre_id}>
                   {c.centre_name || c.name}
                 </option>
               ))
             )}
           </select>
+
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <InputField
@@ -475,11 +426,10 @@ export default function CampRegistration() {
           <button
             type="submit"
             disabled={loading || centres.length === 0 || organizerProfileMissing}
-            className={`px-6 py-2 rounded-lg text-white transition-colors ${
-              centres.length === 0 || organizerProfileMissing
+            className={`px-6 py-2 rounded-lg text-white transition-colors ${centres.length === 0 || organizerProfileMissing
                 ? "bg-gray-600 cursor-not-allowed"
                 : "bg-red-600 hover:bg-red-700"
-            }`}
+              }`}
           >
             {loading ? "Submitting..." : "Register Camp"}
           </button>

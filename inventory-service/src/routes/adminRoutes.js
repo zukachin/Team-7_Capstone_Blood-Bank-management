@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const adminsController = require('../controllers/adminsController');
+const adminsController = require('../controllers/adminController');
 const { authenticate, authorize } = require('../middlewares/authMiddlewares');
+
+// console.log('adminsController:', adminsController);
 
 // Create a new admin (SuperAdmin only)
 router.post('/', authenticate, authorize(['SuperAdmin']), adminsController.createAdmin);

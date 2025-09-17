@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const pool = require('../db/pool'); // adjust path if needed
 const generateOtp = require('../utils/generateotp');
-const { sendOtpEmail } = require('../utils/email');
+const { sendOtpEmail, sendCampRegistrationEmail, sendCampApprovalEmail } = require('../utils/email');
 
 const SALT_ROUNDS = 10;
 const OTP_TTL_MINUTES = Number(process.env.OTP_TTL_MINUTES) || 10; // configurable via env
@@ -305,6 +305,59 @@ async function resetPassword (req, res)  {
   }
 };
 
+// Send camp registration confirmation email to user
+async function campRegisterEmail(req, res) {
+  try {
+    const { userId, campId } = req.body;
+    if (!userId || !campId) {
+      return res.status(400).json({ message: "userId and campId are required" });
+    }
+
+    // fetch user email and camp details
+    const userRes = await pool.query("SELECT email, name FROM users WHERE id=$1", [userId]);
+    if (!userRes.rows.length) return res.status(404).json({ message: "User not found" });
+    const user = userRes.rows[0];
+
+    const campRes = await pool.query("SELECT name, date FROM camps WHERE id=$1", [campId]);
+    if (!campRes.rows.length) return res.status(404).json({ message: "Camp not found" });
+    const camp = campRes.rows[0];
+
+    // send email
+    await sendCampRegistrationEmail(user.email, user.name, camp.name, camp.date);
+
+    return res.json({ message: "Camp registration email sent" });
+  } catch (err) {
+    console.error("campRegisterEmail error", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+// Send camp approval email to user
+async function campApprovalEmail(req, res) {
+  try {
+    const { userId, campId } = req.body;
+    if (!userId || !campId) {
+      return res.status(400).json({ message: "userId and campId are required" });
+    }
+
+    // fetch user email and camp details
+    const userRes = await pool.query("SELECT email, name FROM users WHERE id=$1", [userId]);
+    if (!userRes.rows.length) return res.status(404).json({ message: "User not found" });
+    const user = userRes.rows[0];
+
+    const campRes = await pool.query("SELECT name, date FROM camps WHERE id=$1", [campId]);
+    if (!campRes.rows.length) return res.status(404).json({ message: "Camp not found" });
+    const camp = campRes.rows[0];
+
+    // send email
+    await sendCampApprovalEmail(user.email, user.name, camp.name, camp.date);
+
+    return res.json({ message: "Camp approval email sent" });
+  } catch (err) {
+    console.error("campApprovalEmail error", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
 
 
 
@@ -312,4 +365,6 @@ async function resetPassword (req, res)  {
 
 
 
-module.exports = { register, verifyOtp, resendOtp, login , forgotPassword , resetPassword};
+
+module.exports = { register, verifyOtp, resendOtp, login , forgotPassword , resetPassword, campRegisterEmail,
+  campApprovalEmail,};

@@ -246,7 +246,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { api } from "../lib/api";
 
 const RegisterDonor = () => {
-  const navigate = useNavigate();
+    const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -262,19 +262,26 @@ const RegisterDonor = () => {
     last_donation_date: "",
   });
 
-  const [stateName, setStateName] = useState("");
-  const [districtName, setDistrictName] = useState("");
+  const [states, setStates] = useState([]);
+  const [districts, setDistricts] = useState([]);
   const [centres, setCentres] = useState([]);
 
-  // Load profile and prefill
+  // Load profile and states on mount
   useEffect(() => {
     if (!api.getToken()) {
       navigate("/login", { replace: true });
       return;
     }
 
-    api.getProfile()
-      .then((profile) => {
+    const fetchInitialData = async () => {
+      try {
+        const [profile, statesData] = await Promise.all([
+          api.getProfile(),
+          api.getStates(),
+        ]);
+
+        setStates(statesData.states || []);
+
         setFormData((prev) => ({
           ...prev,
           name: profile.name || "",
@@ -284,35 +291,57 @@ const RegisterDonor = () => {
           district_id: profile.district_id || "",
         }));
 
-        setStateName(profile.state_name || "");
-        setDistrictName(profile.district_name || "");
+        if (profile.state_id) {
+          const districtsData = await api.getDistrictsByState(profile.state_id);
+          setDistricts(districtsData.districts || []);
+        }
 
         if (profile.district_id) {
-          api.getCentresByDistrict(profile.district_id)
-            .then((res) => setCentres(res.centres || []))
-            .catch((err) => {
-              console.error("Error fetching centres:", err);
-              setCentres([]);
-            });
+          const centresData = await api.getCentresByDistrict(profile.district_id);
+          setCentres(centresData.centres || []);
         }
-      })
-      .catch((err) => {
-        console.error("Failed to load profile:", err);
-      });
+      } catch (err) {
+        console.error("Failed to load data:", err);
+      }
+    };
 
-
+    fetchInitialData();
   }, [navigate]);
 
-  // const handleInputChange = (e) => {
-  //   const { name, value } = e.target;
-  //   setFormData((prev) => ({
-  //     ...prev,
-  //     [name]: value,
-  //   }));
-  // };
-
-  const handleInputChange = (e) => {
+  const handleInputChange = async (e) => {
     const { name, value } = e.target;
+
+    if (name === "state_id") {
+      setFormData((prev) => ({
+        ...prev,
+        state_id: value,
+        district_id: "",
+        centre_id: "",
+      }));
+      try {
+        const res = await api.getDistrictsByState(value);
+        setDistricts(res.districts || []);
+        setCentres([]);
+      } catch (err) {
+        console.error("Error fetching districts:", err);
+      }
+      return;
+    }
+
+    if (name === "district_id") {
+      setFormData((prev) => ({
+        ...prev,
+        district_id: value,
+        centre_id: "",
+      }));
+      try {
+        const res = await api.getCentresByDistrict(value);
+        setCentres(res.centres || []);
+      } catch (err) {
+        console.error("Error fetching centres:", err);
+      }
+      return;
+    }
 
     if (name === "centre_id") {
       const selectedCentre = centres.find((c) => c.centre_id === Number(value));
@@ -324,8 +353,6 @@ const RegisterDonor = () => {
       [name]: value,
     }));
   };
-
-  console.log("Available Centres:", centres);
 
   const handleSubmit = async () => {
     if (!formData.appointment_date || !formData.appointment_time) {
@@ -351,8 +378,6 @@ const RegisterDonor = () => {
       console.error("Appointment booking failed:", err);
       toast.error("Failed to book appointment.");
     }
-
-
   };
 
   return (
@@ -365,8 +390,22 @@ const RegisterDonor = () => {
             <ReadOnlyField label="Full Name" value={formData.name} />
             <ReadOnlyField label="Email" value={formData.email} />
             <ReadOnlyField label="Phone" value={formData.phone} />
-            <ReadOnlyField label="State" value={stateName} />
-            <ReadOnlyField label="District" value={districtName} />
+
+            <SelectField
+              label="State"
+              name="state_id"
+              value={formData.state_id}
+              onChange={handleInputChange}
+              options={states.map((s) => ({ value: s.id, label: s.name }))}
+            />
+
+            <SelectField
+              label="District"
+              name="district_id"
+              value={formData.district_id}
+              onChange={handleInputChange}
+              options={districts.map((d) => ({ value: d.id, label: d.name }))}
+            />
 
             <SelectField
               label="Centre"
@@ -404,7 +443,10 @@ const RegisterDonor = () => {
               name="under_medication"
               value={formData.under_medication}
               onChange={handleInputChange}
-              options={[{ value: "No", label: "No" }, { value: "Yes", label: "Yes" }]}
+              options={[
+                { value: "No", label: "No" },
+                { value: "Yes", label: "Yes" },
+              ]}
             />
             <InputField
               label="Last Donation Date"
@@ -436,19 +478,48 @@ const RegisterDonor = () => {
         <ToastContainer position="top-right" autoClose={3000} />
       </div>
     </div>
-
-
   );
 };
 
+// Reusable Input component
 const InputField = ({ label, name, type = "text", value, onChange }) => (
+  <div className="flex flex-col">
+    <label htmlFor={name} className="mb-1 font-medium text-sm">
+      {label}
+    </label>
+    <input
+      type={type}
+      id={name}
+      name={name}
+      value={value}
+      onChange={onChange}
+      className="p-2 rounded bg-neutral-800 border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-red-600 text-white"
+    />
+  </div>
+);
 
-  <div className="flex flex-col"> <label htmlFor={name} className="mb-1 font-medium text-sm"> {label} </label> <input type={type} id={name} name={name} value={value} onChange={onChange} className="p-2 rounded bg-neutral-800 border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-red-600 text-white" /> </div>);
-
+// Reusable Select component
 const SelectField = ({ label, name, value, onChange, options }) => (
-
-  <div className="flex flex-col"> <label htmlFor={name} className="mb-1 font-medium text-sm"> {label} </label> <select id={name} name={name} value={value} onChange={onChange} className="p-2 rounded bg-neutral-800 border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-red-600 text-white" > <option value="">-- Select {label} --</option> {options.map((opt) => (<option key={opt.value} value={opt.value}> {opt.label} </option>))} </select> </div>);
-
+  <div className="flex flex-col">
+    <label htmlFor={name} className="mb-1 font-medium text-sm">
+      {label}
+    </label>
+    <select
+      id={name}
+      name={name}
+      value={value}
+      onChange={onChange}
+      className="p-2 rounded bg-neutral-800 border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-red-600 text-white"
+    >
+      <option value="">-- Select {label} --</option>
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
+  </div>
+);
 const ReadOnlyField = ({ label, value }) => (
 
   <div className="flex flex-col"> <label className="mb-1 font-medium text-sm">{label}</label> <input type="text" value={value} readOnly className="p-2 rounded bg-neutral-800 border border-neutral-700 text-gray-400" /> </div>);

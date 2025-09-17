@@ -163,7 +163,7 @@ function setToken(token) {
   try {
     if (token) localStorage.setItem("auth_token", token);
     else localStorage.removeItem("auth_token");
-  } catch (e) {}
+  } catch (e) { }
 }
 function getToken() {
   try {
@@ -176,7 +176,7 @@ function setAdminToken(token) {
   try {
     if (token) localStorage.setItem("adminToken", token);
     else localStorage.removeItem("adminToken");
-  } catch (e) {}
+  } catch (e) { }
 }
 function getAdminToken() {
   try {
@@ -265,13 +265,27 @@ export const api = {
 
   // Admin Auth (ADMIN_BASE)
   adminLogin: (payload) => post(ADMIN_BASE, "/auth/login", payload),
+  // Admin-only camps
+  getAdminCamps: (stateId) => {
+    const params = new URLSearchParams();
+    if (stateId) params.append("state_id", stateId);
+    return get(ADMIN_BASE, `/camps/admin/camps?${params.toString()}`, authHeader(ADMIN_BASE));
+  },
 
+  // Admin Camp Status Update
+  updateCampStatus: (campId, action) =>
+    patch(ADMIN_BASE, `/camps/admin/camps/${campId}/status`, { action }, authHeader(ADMIN_BASE)),
+
+  getAdminProfile: () => {
+    return get(ADMIN_BASE, "/admins", authHeader(ADMIN_BASE));
+  },
+  
   // Centres & Camps (ADMIN_BASE)
   getCentresByDistrict: (districtId) =>
     get(ADMIN_BASE, `/centres/public/by-district?district_id=${encodeURIComponent(districtId)}`),
   registerOrganizer: (payload) =>
     post(ADMIN_BASE, "/camps/organizers", payload, authHeader(AUTH_BASE)),
-  
+
   // getOrganizerProfile: () => get(ADMIN_BASE, "/camps/organizers/me", authHeader(AUTH_BASE)),
   getOrganizerProfile: async function () {
     const response = await fetch("http://localhost:4001/api/camps/organizers/me", {
@@ -293,6 +307,7 @@ export const api = {
 
     return await response.json();
   },
+
   getOrganizerCamps: () => get(ADMIN_BASE, "/camps/organizers/me/camps", authHeader(AUTH_BASE)),
   createCamp: (payload) => post(ADMIN_BASE, "/camps/camps", payload, authHeader(ADMIN_BASE)),
 

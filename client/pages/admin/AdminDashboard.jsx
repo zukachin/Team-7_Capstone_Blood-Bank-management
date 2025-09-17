@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { Users, MessageSquare, Home, Bell } from "lucide-react";
+import { Users, MessageSquare, Home, Bell, User } from "lucide-react";
 import { api } from "../../lib/api"; // Adjust as needed
+import path from "path";
 
 export default function AdminDashboard() {
   const location = useLocation();
@@ -16,6 +17,9 @@ export default function AdminDashboard() {
     { path: "/admin/donors/counseling", label: "Donor Counseling", icon: <MessageSquare size={18} /> },
     { path: "/admin/centers", label: "Manage Centres", icon: <Home size={18} /> },
     { path: "/admin/appointments", label: "Manage Appointments", icon: <Home size={18} /> },
+    // { path: "/admin/notifications", label: "Notifications", icon: <Bell size={18} /> },
+    { path: "/admin/profile", label: "Profile", icon: <User size={18} /> },
+    { path: "/admin/camps", label: "Camps", icon: <Bell size={18} /> }
   ];
 
   useEffect(() => {
@@ -66,11 +70,10 @@ export default function AdminDashboard() {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ${
-                  location.pathname === link.path
+                className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ${location.pathname === link.path
                     ? "bg-red-600/70 text-white font-bold shadow-md"
                     : "text-gray-300 hover:bg-red-700/70 hover:text-white"
-                }`}
+                  }`}
               >
                 {link.icon}
                 {link.label}

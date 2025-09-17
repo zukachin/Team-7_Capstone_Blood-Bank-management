@@ -36,6 +36,8 @@ import AdminCenters from "./pages/admin/AdminCenters";
 import AdminAppointments from "./pages/admin/AdminAppointments";
 import { Header } from "../client/components/Header";
 import OrganizeCampPage from "./pages/OrganizeCampPage";
+import AdminCampsPage from "./pages/admin/AdminCampsPage";
+import AdminProfilePage from "./pages/admin/AdminProfilePage";
 
 
 
@@ -101,6 +103,8 @@ export default function App() {
               <Route path="donors/counseling" element={<DonorCounseling />} />
               <Route path="centers" element={<AdminCenters />} />
               <Route path="appointments" element={<AdminAppointments />} />
+              <Route path="camps" element={<AdminCampsPage />} />
+              <Route path="profile" element={<AdminProfilePage />} />
           
             </Route>
             

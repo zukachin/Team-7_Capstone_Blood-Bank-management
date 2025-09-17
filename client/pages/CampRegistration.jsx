@@ -2,6 +2,56 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 
+// You may use a UI library modal or build your own simple one
+function ConfirmModal({ visible, title, message, onConfirm, onCancel }) {
+  if (!visible) return null;
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 max-w-md w-full">
+        <h3 className="text-xl font-semibold mb-4">{title}</h3>
+        <p className="mb-6">{message}</p>
+        <div className="flex justify-end gap-4">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 rounded-lg bg-gray-300 hover:bg-gray-400"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Toast({ message, onClose }) {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 4000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50"
+      role="alert"
+    >
+      <span>{message}</span>
+      <button
+        onClick={onClose}
+        className="ml-3 font-bold hover:text-gray-200"
+        aria-label="Close notification"
+      >
+        ×
+      </button>
+    </div>
+  );
+}
+
 export default function CampRegistration() {
   const navigate = useNavigate();
 
@@ -27,7 +77,8 @@ export default function CampRegistration() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const [msg, setMsg] = useState("");
-  const [toastMessage, setToastMessage] = useState(""); // NEW: toast popup state
+  const [toastMessage, setToastMessage] = useState("");
+  const [confirmVisible, setConfirmVisible] = useState(false);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -38,40 +89,39 @@ export default function CampRegistration() {
 
   // Load organizer profile
   useEffect(() => {
-  api
-    .getOrganizerProfile()
-    .then((data) => {
-      if (data?.organizer) {
-        setOrganizer(data.organizer);
-        setForm((prev) => ({
-          ...prev,
-          organizer_id: data.organizer.organizer_id,
-        }));
-        setErr("");
-        fetchExistingCamps();
-      } else {
-        const msg = "Organizer profile not found. Please register your organizer profile first.";
-        setOrganizer(null);
-        setErr(msg);
-        setToastMessage(msg);
-      }
-    })
-    .catch((error) => {
-      if (error.status === 404) {
-        const msg = "Organizer profile not found. Please register your organizer profile first.";
-        setErr(msg);
-        setToastMessage(msg);
-        setOrganizer(null);
-      } else {
-        console.error("Failed to fetch organizer profile:", error);
-        setErr("Failed to load organizer profile");
-        setToastMessage("Failed to load organizer profile. Please try again later.");
-        setOrganizer(null);
-      }
-    });
-}, []);
+    api
+      .getOrganizerProfile()
+      .then((data) => {
+        if (data?.organizer) {
+          setOrganizer(data.organizer);
+          setForm((prev) => ({
+            ...prev,
+            organizer_id: data.organizer.organizer_id,
+          }));
+          setErr("");
+          fetchExistingCamps();
+        } else {
+          const m = "Organizer profile not found. Please register your organizer profile first.";
+          setOrganizer(null);
+          setErr(m);
+          setToastMessage(m);
+        }
+      })
+      .catch((error) => {
+        if (error.status === 404) {
+          const m = "Organizer profile not found. Please register your organizer profile first.";
+          setErr(m);
+          setToastMessage(m);
+          setOrganizer(null);
+        } else {
+          console.error("Failed to fetch organizer profile:", error);
+          setErr("Failed to load organizer profile");
+          setToastMessage("Failed to load organizer profile. Please try again later.");
+          setOrganizer(null);
+        }
+      });
+  }, []);
 
-  // Fetch existing camps created by the organizer
   const fetchExistingCamps = async () => {
     try {
       const response = await fetch(
@@ -92,7 +142,6 @@ export default function CampRegistration() {
     }
   };
 
-  // Load states
   useEffect(() => {
     api
       .getStates()
@@ -108,7 +157,6 @@ export default function CampRegistration() {
       .catch((error) => console.error("Error loading states:", error));
   }, []);
 
-  // Load districts on state change
   useEffect(() => {
     if (!form.state_id) {
       setDistricts([]);
@@ -128,7 +176,6 @@ export default function CampRegistration() {
       .catch((error) => console.error("Error loading districts:", error));
   }, [form.state_id]);
 
-  // Load centres on district change
   useEffect(() => {
     if (!form.district_id) {
       setCentres([]);
@@ -156,8 +203,14 @@ export default function CampRegistration() {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
+    // Show confirmation before actual submit
+    setConfirmVisible(true);
+  };
+
+  const confirmSubmit = async () => {
+    setConfirmVisible(false);
     setErr("");
     setMsg("");
     setLoading(true);
@@ -180,10 +233,14 @@ export default function CampRegistration() {
         description: form.description,
       };
 
-      await api.createCamp(payload);
+      const response = await api.createCamp(payload);
+
+      // Toast or notification
+      setToastMessage("Camp registered successfully! Status: Pending.");
+
       setMsg("Camp registered successfully!");
 
-      // Reset form (except organizer_id)
+      // Reset form except organizer_id
       setForm((prev) => ({
         ...prev,
         camp_name: "",
@@ -200,14 +257,22 @@ export default function CampRegistration() {
       setCentres([]);
       setDistricts([]);
 
-      // Refresh camps list after new camp created
       fetchExistingCamps();
+
+      // TODO: Backend should send email to organizer here
+      // e.g. server side: sendEmail(organizer.email, "Your camp has been registered and is pending approval", ...)
+
     } catch (error) {
       console.error("Failed to register camp:", error);
       setErr(error.message || "Failed to register camp");
+      setToastMessage(error.message || "Failed to register camp");
     } finally {
       setLoading(false);
     }
+  };
+
+  const cancelSubmit = () => {
+    setConfirmVisible(false);
   };
 
   const organizerProfileMissing = !organizer && err === "Organizer profile not found.";
@@ -233,10 +298,11 @@ export default function CampRegistration() {
         {msg && <p className="text-green-400 mb-4">{msg}</p>}
         {err && !organizerProfileMissing && <p className="text-red-400 mb-4">{err}</p>}
 
-        {/* Show existing camps if any */}
         {existingCamps.length > 0 && (
           <div className="mb-8">
-            <h3 className="text-xl font-semibold mb-4 text-yellow-400">Your Existing Camps</h3>
+            <h3 className="text-xl font-semibold mb-4 text-yellow-400">
+              Your Existing Camps
+            </h3>
             <div className="max-h-72 overflow-y-auto space-y-4">
               {existingCamps.map((camp) => (
                 <div
@@ -256,14 +322,16 @@ export default function CampRegistration() {
                           : "bg-gray-600 text-gray-100"
                       }`}
                     >
-                      {camp.status.charAt(0).toUpperCase() + camp.status.slice(1)}
+                      {camp.status.charAt(0).toUpperCase() +
+                        camp.status.slice(1)}
                     </span>
                   </div>
                   <p>
                     <strong>Location:</strong> {camp.location}
                   </p>
                   <p>
-                    <strong>Date:</strong> {new Date(camp.camp_date).toLocaleDateString()}
+                    <strong>Date:</strong>{" "}
+                    {new Date(camp.camp_date).toLocaleDateString()}
                   </p>
                   <p>
                     <strong>Time:</strong> {camp.camp_time}
@@ -279,18 +347,14 @@ export default function CampRegistration() {
           </div>
         )}
 
-        {/* Camp Registration Form */}
         <form
           onSubmit={handleSubmit}
           className="space-y-5"
-          disabled={organizerProfileMissing}
           style={{
             pointerEvents: organizerProfileMissing ? "none" : "auto",
             opacity: organizerProfileMissing ? 0.6 : 1,
           }}
         >
-          {/* Your InputField and form controls unchanged */}
-
           <InputField
             label="Camp Name"
             name="camp_name"
@@ -421,36 +485,20 @@ export default function CampRegistration() {
           </button>
         </form>
 
+        {/* Confirmation Modal */}
+        <ConfirmModal
+          visible={confirmVisible}
+          title="Confirm Registration"
+          message="Are you sure you want to register this camp? Once registered it will be in pending status."
+          onConfirm={confirmSubmit}
+          onCancel={cancelSubmit}
+        />
+
         {/* Toast popup */}
         {toastMessage && (
           <Toast message={toastMessage} onClose={() => setToastMessage("")} />
         )}
       </div>
-    </div>
-  );
-}
-
-function Toast({ message, onClose }) {
-  React.useEffect(() => {
-    const timer = setTimeout(onClose, 4000); // auto close after 4 seconds
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  return (
-    <div
-      className="fixed top-4 right-4 bg-yellow-500 text-black px-4 py-2 rounded shadow-lg z-50 flex items-center"
-      role="alert"
-      aria-live="assertive"
-      aria-atomic="true"
-    >
-      <span>{message}</span>
-      <button
-        onClick={onClose}
-        className="ml-3 font-bold hover:text-gray-800"
-        aria-label="Close notification"
-      >
-        ×
-      </button>
     </div>
   );
 }

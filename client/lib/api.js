@@ -221,5 +221,29 @@ export const api = {
       headers: authHeader(ADMIN_BASE),
     });
     return res.json();
+  },
+
+  downloadAppointmentPDF: async (appointmentId) => {
+    const res = await fetch(`${ADMIN_BASE}/api/admin/appointments/${appointmentId}/pdf`, {
+      method: "GET",
+      headers: {
+        ...authHeader(ADMIN_BASE),
+      }
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text || "Failed to download appointment PDF");
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `appointment-${appointmentId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
   }
 };

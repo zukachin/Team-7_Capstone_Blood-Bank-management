@@ -5,7 +5,6 @@ import { api } from "../lib/api";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-
 const DonorPortalPage = () => {
   const navigate = useNavigate();
   const mainRef = useRef(null);
@@ -17,6 +16,68 @@ const DonorPortalPage = () => {
   const [profile, setProfile] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [error, setError] = useState("");
+
+  // Helper: normalize time string to "HH:mm:ss" (24h) or return null
+  const normalizeTimeString = (timeStr) => {
+    if (!timeStr) return null;
+    const t = timeStr.trim().toLowerCase();
+
+    // Match formats like "2:30 pm" or "02:30:00 am"
+    const ampm = t.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)$/i);
+    if (ampm) {
+      let hh = parseInt(ampm[1], 10);
+      const mm = parseInt(ampm[2], 10);
+      const ss = ampm[3] ? parseInt(ampm[3], 10) : 0;
+      const ap = ampm[4].toLowerCase();
+      if (ap === "pm" && hh < 12) hh += 12;
+      if (ap === "am" && hh === 12) hh = 0;
+      return [hh, mm, ss].map((n) => String(n).padStart(2, "0")).join(":");
+    }
+
+    // Match 24-hour formats "HH:mm" or "HH:mm:ss"
+    const match24 = t.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+    if (match24) {
+      const hh = parseInt(match24[1], 10);
+      const mm = parseInt(match24[2], 10);
+      const ss = match24[3] ? parseInt(match24[3], 10) : 0;
+      return [hh, mm, ss].map((n) => String(n).padStart(2, "0")).join(":");
+    }
+
+    return null;
+  };
+
+  // Helper: build a local Date object from date string (YYYY-MM-DD or ISO) and time string
+  const buildLocalDateFromParts = (dateStr, timeStr) => {
+    if (!dateStr) return null;
+    const dateOnly = dateStr.split("T")[0]; // if ISO is given, take date part
+    const dateParts = dateOnly.split("-");
+    if (dateParts.length < 3) {
+      // fallback to Date parse
+      const fallback = new Date(dateStr);
+      return isNaN(fallback.getTime()) ? null : fallback;
+    }
+    const year = Number(dateParts[0]);
+    const month = Number(dateParts[1]);
+    const day = Number(dateParts[2]);
+
+    const normTime = normalizeTimeString(timeStr);
+    if (!normTime) {
+      // no valid time — return local date at midnight
+      return new Date(year, month - 1, day, 0, 0, 0);
+    }
+
+    const [hh, mm, ss] = normTime.split(":").map(Number);
+    return new Date(year, month - 1, day, hh, mm, ss);
+  };
+
+  // Format nice display like: "12/10/2045, 09:30:00 AM" (browser locale)
+  const formatDisplayDateTime = (dateObj) => {
+    if (!dateObj || isNaN(dateObj.getTime())) return "N/A";
+    // You can customize locale/options here; this will show date + time.
+    const datePart = dateObj.toLocaleDateString();
+    const timePart = dateObj.toLocaleTimeString();
+    return `${datePart}, ${timePart}`;
+  };
 
   const handleNavigation = (path) => {
     gsap.to(mainRef.current, {
@@ -51,21 +112,6 @@ const DonorPortalPage = () => {
       "-=0.2"
     );
 
-    // Animate appointment cards when loaded
-    if (appointmentsRef.current.length > 0) {
-      gsap.fromTo(
-        appointmentsRef.current,
-        { y: 30, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          duration: 0.6,
-          stagger: 0.15,
-          ease: "power2.out",
-        }
-      );
-    }
-
     // Fetch profile
     api.getProfile()
       .then((data) => {
@@ -77,14 +123,22 @@ const DonorPortalPage = () => {
       })
       .finally(() => setLoadingProfile(false));
 
-    // Fetch appointments
+    // Fetch appointments and enrich them with Date object + display string
     api.getMyAppointments()
       .then((data) => {
-        if (data && Array.isArray(data.appointments)) {
-          setAppointments(data.appointments);
-        } else {
-          setAppointments([]);
-        }
+        const list = (data && Array.isArray(data.appointments)) ? data.appointments : [];
+        const enriched = list.map((a) => {
+          const dt = buildLocalDateFromParts(a.appointment_date, a.appointment_time);
+          return {
+            ...a,
+            appointment_datetime_obj: dt,
+            appointment_display: dt ? formatDisplayDateTime(dt) : (a.appointment_date || "N/A"),
+          };
+        });
+
+        // Reset refs for animation
+        appointmentsRef.current = [];
+        setAppointments(enriched);
       })
       .catch((err) => {
         console.error("Failed to fetch appointments:", err);
@@ -139,11 +193,7 @@ const DonorPortalPage = () => {
     // Greeting
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
-    doc.text(
-      `Dear ${profile?.name || "Donor"},`,
-      20,
-      55
-    );
+    doc.text(`Dear ${profile?.name || "Donor"},`, 20, 55);
 
     doc.text(
       "Thank you for your commitment to save lives. Please find your appointment details below:",
@@ -151,6 +201,12 @@ const DonorPortalPage = () => {
       65,
       { maxWidth: 170 }
     );
+
+    const dtObj = appointment.appointment_datetime_obj || buildLocalDateFromParts(appointment.appointment_date, appointment.appointment_time);
+    const dateTimeForPdf = dtObj ? formatDisplayDateTime(dtObj) : (appointment.appointment_date || "N/A");
+
+    // last donation safe string
+    const lastDonation = appointment.last_donation_date ? new Date(appointment.last_donation_date).toLocaleDateString() : "N/A";
 
     // Table with appointment details
     autoTable(doc, {
@@ -162,18 +218,12 @@ const DonorPortalPage = () => {
         ["Appointment ID", appointment.appointment_id],
         ["Centre", appointment.centre_name],
         ["Centre Code", appointment.centre_code],
-        [
-          "Date & Time",
-          `${new Date(appointment.appointment_date).toLocaleDateString()} at ${appointment.appointment_time}`,
-        ],
+        ["Date & Time", dateTimeForPdf],
         ["Status", appointment.status],
         ["Token Number", appointment.token_no],
-        ["Weight", appointment.weight],
-        ["Under Medication", appointment.under_medication],
-        [
-          "Last Donation Date",
-          new Date(appointment.last_donation_date).toLocaleDateString(),
-        ],
+        ["Weight", appointment.weight ?? "N/A"],
+        ["Under Medication", appointment.under_medication ?? "N/A"],
+        ["Last Donation Date", lastDonation],
       ],
       styles: { cellPadding: 4, fontSize: 11 },
       columnStyles: {
@@ -183,27 +233,13 @@ const DonorPortalPage = () => {
     });
 
     // Footer / signature
-    const finalY = doc.lastAutoTable.finalY || 75 + 9 * 10; // last y pos or estimate
-    doc.text(
-      "Please arrive 15 minutes before your appointment time and bring a valid ID.",
-      20,
-      finalY + 15,
-      { maxWidth: 170 }
-    );
+    const finalY = doc.lastAutoTable?.finalY || 75 + 9 * 10;
+    doc.text("Please arrive 15 minutes before your appointment time and bring a valid ID.", 20, finalY + 15, { maxWidth: 170 });
 
-    doc.text(
-      "Thank you for your generosity!",
-      20,
-      finalY + 25,
-      { maxWidth: 170 }
-    );
+    doc.text("Thank you for your generosity!", 20, finalY + 25, { maxWidth: 170 });
 
     doc.setFont("helvetica", "italic");
-    doc.text(
-      "Life Link Team",
-      20,
-      finalY + 35
-    );
+    doc.text("Life Link Team", 20, finalY + 35);
 
     // Save PDF
     doc.save(`appointment_letter_${appointment.appointment_id}.pdf`);
@@ -248,30 +284,16 @@ const DonorPortalPage = () => {
         {/* Profile */}
         <div className="bg-neutral-900 p-6 rounded-xl shadow-md w-full max-w-md text-left mb-12">
           <h2 className="text-xl font-bold mb-4 text-red-500">My Profile</h2>
-          {loadingProfile && (
-            <p className="text-gray-400">Loading profile...</p>
-          )}
+          {loadingProfile && <p className="text-gray-400">Loading profile...</p>}
           {error && <p className="text-red-500">{error}</p>}
           {profile && (
             <div className="space-y-2 text-gray-200">
-              <p>
-                <b>Name:</b> {profile.name}
-              </p>
-              <p>
-                <b>Email:</b> {profile.email}
-              </p>
-              <p>
-                <b>Phone:</b> {profile.phone}
-              </p>
-              <p>
-                <b>Gender:</b> {profile.gender}
-              </p>
-              <p>
-                <b>Blood Group:</b> {profile.blood_group || "N/A"}
-              </p>
-              <p>
-                <b>Address:</b> {profile.address}
-              </p>
+              <p><b>Name:</b> {profile.name}</p>
+              <p><b>Email:</b> {profile.email}</p>
+              <p><b>Phone:</b> {profile.phone}</p>
+              <p><b>Gender:</b> {profile.gender}</p>
+              <p><b>Blood Group:</b> {profile.blood_group || "N/A"}</p>
+              <p><b>Address:</b> {profile.address}</p>
             </div>
           )}
         </div>
@@ -288,15 +310,9 @@ const DonorPortalPage = () => {
                 className="p-4 bg-gray-800 rounded-lg flex justify-between items-center"
               >
                 <div>
-                  <p>
-                    <b>Centre:</b> {a.centre_name}
-                  </p>
-                  <p>
-                    <b>Date:</b> {new Date(a.appointment_date).toLocaleString()}
-                  </p>
-                  <p>
-                    <b>Status:</b> {a.status}
-                  </p>
+                  <p><b>Centre:</b> {a.centre_name}</p>
+                  <p><b>Date:</b> {a.appointment_display}</p>
+                  <p><b>Status:</b> {a.status}</p>
                 </div>
                 <div className="flex space-x-2">
                   {a.status === "Approved" && (
@@ -333,4 +349,3 @@ const DonorPortalPage = () => {
 };
 
 export default DonorPortalPage;
-

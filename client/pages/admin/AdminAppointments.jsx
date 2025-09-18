@@ -99,7 +99,7 @@ export default function AdminAppointments() {
               <p><strong>Center:</strong> {a.centre_id} ({a.district_id})</p>
               <p><strong>Date & Time:</strong> {a.appointment_date} | {a.appointment_time}</p>
               <p><strong>Weight:</strong> {a.weight} kg </p>
-              <p><strong>Medication:</strong> {a.under_medication ? "Yes" : "No"}</p>
+<p><strong>Medication:</strong> {a.under_medication === "Yes" ? "Yes" : "No"}</p>
               <p><strong>Last Donation:</strong> {a.last_donation_date || "-"}</p>
 
               <div className="mt-3 flex flex-col gap-2">

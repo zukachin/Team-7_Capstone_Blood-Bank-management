@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { Users, MessageSquare, Home, Bell, User } from "lucide-react";
+import { Users, MessageSquare, Home, Bell, User, LogOut } from "lucide-react";
 import { api } from "../../lib/api";
 
 export default function AdminDashboard() {
@@ -75,6 +75,11 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("token"); // Or whatever key you're using
+    window.location.href = "/admin/login"; // Redirect to login route
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen text-white">
@@ -138,6 +143,15 @@ export default function AdminDashboard() {
             <Home size={18} />
             Back to Home
           </Link>
+
+          {/* 🔐 Logout Button */}
+          <button
+            onClick={handleLogout}
+            className="flex items-center justify-center gap-2 w-full bg-red-700 text-white py-2 rounded-lg hover:bg-red-800 transition-all"
+          >
+            <LogOut size={18} />
+            Logout
+          </button>
         </div>
       </aside>
 

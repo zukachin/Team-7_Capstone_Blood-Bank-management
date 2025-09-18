@@ -37,7 +37,11 @@ import AdminAppointments from "./pages/admin/AdminAppointments";
 import { Header } from "../client/components/Header";
 import OrganizeCampPage from "./pages/OrganizeCampPage";
 
-
+import CollectionsPage from "./pages/admin/Collectionspage";
+import CollectionDetail from "./pages/admin/collectionDetail";
+import TestingList from "./pages/admin/TestingList";
+import TestingEdit from "./pages/admin/TestingEdit";
+import Inventory from "./pages/admin/Inventory"
 
 const queryClient = new QueryClient();
 
@@ -101,7 +105,12 @@ export default function App() {
               <Route path="donors/counseling" element={<DonorCounseling />} />
               <Route path="centers" element={<AdminCenters />} />
               <Route path="appointments" element={<AdminAppointments />} />
-          
+                <Route path="collections" element={<CollectionsPage />} />
+  <Route path="collections/:collection_id" element={<CollectionDetail />} />
+  <Route path="testing" element={<TestingList />} />
+    <Route path="/admin/testing/:collection_id/edit" element={<TestingEdit />} />
+    <Route path="inventory" element={<Inventory/>}/>
+    
             </Route>
             
 

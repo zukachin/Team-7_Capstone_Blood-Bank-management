@@ -1,8 +1,32 @@
 import React, { useState } from "react";
 import { MessageCircle, X } from "lucide-react";
+import { api } from "../lib/api";
 
-export default function Chatbot({ messages, input, setInput, sendMessage }) {
+export default function Chatbot() {
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+
+  // Send message to backend
+  const handleSend = async () => {
+    if (!input.trim()) return;
+
+    // Show user message immediately
+    setMessages((prev) => [...prev, { from: "user", text: input }]);
+
+    try {
+      const res = await api.sendChat(input);
+      setMessages((prev) => [...prev, { from: "bot", text: res.response }]);
+    } catch (err) {
+      console.error(err);
+      setMessages((prev) => [
+        ...prev,
+        { from: "bot", text: "⚠️ Server error, try again." },
+      ]);
+    }
+
+    setInput(""); // clear input
+  };
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
@@ -17,10 +41,12 @@ export default function Chatbot({ messages, input, setInput, sendMessage }) {
 
       {/* Chat Panel */}
       {isChatOpen && (
-        <div className="absolute bottom-16 right-0 w-80 h-96 
-                        bg-black/70 backdrop-blur-md 
-                        text-white shadow-2xl rounded-2xl 
-                        flex flex-col overflow-hidden border border-red-600/40">
+        <div
+          className="absolute bottom-16 right-0 w-80 h-96 
+                     bg-black/70 backdrop-blur-md 
+                     text-white shadow-2xl rounded-2xl 
+                     flex flex-col overflow-hidden border border-red-600/40"
+        >
           {/* Header */}
           <div className="bg-red-600/90 backdrop-blur-md p-4 flex justify-between items-center font-bold">
             <span>Assistant</span>
@@ -55,24 +81,18 @@ export default function Chatbot({ messages, input, setInput, sendMessage }) {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-             onKeyDown={(e) => {
-  if (e.key === "Enter") {
-    sendMessage();
-    setInput(""); // clear on Enter too
-  }
-}}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSend();
+              }}
               placeholder="Type a message..."
               className="flex-1 bg-transparent text-white border border-red-600/50 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-red-600 placeholder-gray-400"
             />
             <button
-  onClick={() => {
-    sendMessage();
-    setInput(""); // Clear input after sending
-  }}
-  className="ml-2 bg-red-600/90 hover:bg-red-700 px-3 rounded-lg text-white shadow transition"
->
-  Send
-</button>
+              onClick={handleSend}
+              className="ml-2 bg-red-600/90 hover:bg-red-700 px-3 rounded-lg text-white shadow transition"
+            >
+              Send
+            </button>
           </div>
         </div>
       )}

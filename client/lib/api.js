@@ -1,6 +1,7 @@
 // client/lib/api.js
 const AUTH_BASE = import.meta.env.VITE_API_BASE_AUTH || "http://localhost:4000";
 const ADMIN_BASE = import.meta.env.VITE_API_BASE_ADMIN || "http://localhost:4001";
+const CHATBOT_BASE = import.meta.env.VITE_API_BASE_CHATBOT || "http://localhost:8000"; 
 
 // Token Helpers
 function setToken(token) {
@@ -245,5 +246,10 @@ export const api = {
     a.click();
     a.remove();
     window.URL.revokeObjectURL(url);
-  }
+  },
+ 
+  // ================= Chatbot (CHATBOT_BASE)
+sendChat: (text, thread_id = "default") =>
+  post(CHATBOT_BASE, "/chat", { query: text, thread_id }),
+
 };

@@ -20,7 +20,8 @@ export default function AdminDashboard() {
     { path: "/admin/centers", label: "Manage Centres", icon: <Home size={18} /> },
     { path: "/admin/appointments", label: "Manage Appointments", icon: <Home size={18} /> },
     { path: "/admin/profile", label: "Profile", icon: <User size={18} /> },
-    { path: "/admin/camps", label: "Camps", icon: <Bell size={18} /> }
+    { path: "/admin/camps", label: "Camps", icon: <Bell size={18} /> },
+    { path: "/admin/summary", label: "Summary", icon: <Bell size={18} /> }
   ];
 
   useEffect(() => {

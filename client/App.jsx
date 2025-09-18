@@ -38,6 +38,7 @@ import { Header } from "../client/components/Header";
 import OrganizeCampPage from "./pages/OrganizeCampPage";
 import AdminCampsPage from "./pages/admin/AdminCampsPage";
 import AdminProfilePage from "./pages/admin/AdminProfilePage";
+import AdminSummary from "./pages/admin/AdminSummary";
 
 
 
@@ -105,6 +106,7 @@ export default function App() {
               <Route path="appointments" element={<AdminAppointments />} />
               <Route path="camps" element={<AdminCampsPage />} />
               <Route path="profile" element={<AdminProfilePage />} />
+              <Route path="summary" element={<AdminSummary/>} />
           
             </Route>
             

@@ -109,8 +109,9 @@ export default function UserMenu() {
   const logout = () => {
     api.setToken(null);
     setOpen(false);
-    navigate("/"); // use navigate instead of window.location.href for SPA behavior
+    window.location.href = "/";
   };
+
 
   return (
     <div ref={ref} className="relative">

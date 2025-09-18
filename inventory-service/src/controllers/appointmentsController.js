@@ -30,10 +30,10 @@ exports.createAppointment = async (req, res) => {
       return res.status(400).json({ message: 'Weight must be greater than 45 kg' });
     }
 
-    if (!last_donation_date) {
-      // require last_donation_date — you can relax if you prefer
-      return res.status(400).json({ message: 'last_donation_date is required' });
-    }
+    // if (!last_donation_date) {
+    //   // require last_donation_date — you can relax if you prefer
+    //   return res.status(400).json({ message: 'last_donation_date is required' });
+    // }
 
     // parse dates
     const today = new Date();

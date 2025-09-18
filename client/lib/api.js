@@ -1,13 +1,14 @@
 // client/lib/api.js
 const AUTH_BASE = import.meta.env.VITE_API_BASE_AUTH || "http://localhost:4000";
 const ADMIN_BASE = import.meta.env.VITE_API_BASE_ADMIN || "http://localhost:4001";
+const CHATBOT_BASE = import.meta.env.VITE_API_BASE_CHATBOT || "http://localhost:8000"; 
 
 // Token Helpers
 function setToken(token) {
   try {
     if (token) localStorage.setItem("auth_token", token);
     else localStorage.removeItem("auth_token");
-  } catch (e) {}
+  } catch (e) { }
 }
 function getToken() {
   try {
@@ -20,7 +21,7 @@ function setAdminToken(token) {
   try {
     if (token) localStorage.setItem("adminToken", token);
     else localStorage.removeItem("adminToken");
-  } catch (e) {}
+  } catch (e) { }
 }
 function getAdminToken() {
   try {
@@ -30,7 +31,13 @@ function getAdminToken() {
   }
 }
 
-// Auth header returns correct token based on base URL
+// Helper: Capitalize first letter (e.g. "pending" => "Pending")
+function capitalizeStatus(status) {
+  if (!status || typeof status !== "string") return status;
+  return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+}
+
+// ✅ Auth header returns correct token based on base URL
 function authHeader(base = AUTH_BASE) {
   const token = base === ADMIN_BASE ? getAdminToken() : getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -118,17 +125,53 @@ export const api = {
 
   // Admin Auth (ADMIN_BASE)
   adminLogin: (payload) => post(ADMIN_BASE, "/auth/login", payload),
+  // Admin-only camps
+  getAdminCamps: (stateId) => {
+    const params = new URLSearchParams();
+    if (stateId) params.append("state_id", stateId);
+    return get(ADMIN_BASE, `/camps/admin/camps?${params.toString()}`, authHeader(ADMIN_BASE));
+  },
+
+  // Admin Camp Status Update
+  updateCampStatus: (campId, action) =>
+    patch(ADMIN_BASE, `/camps/admin/camps/${campId}/status`, { action }, authHeader(ADMIN_BASE)),
+
+  getAdminProfile: () => {
+    return get(ADMIN_BASE, "/admins", authHeader(ADMIN_BASE));
+  },
 
   // Admin Profile
-  getAdminProfile: () => get(ADMIN_BASE, "/admin/profile", authHeader(ADMIN_BASE)),
+  //getAdminProfile: () => get(ADMIN_BASE, "/admin/profile", authHeader(ADMIN_BASE)),
 
   // Centres & Camps (ADMIN_BASE)
   getCentresByDistrict: (districtId) =>
     get(ADMIN_BASE, `/centres/public/by-district?district_id=${encodeURIComponent(districtId)}`),
   registerOrganizer: (payload) =>
-    post(ADMIN_BASE, "/camps/organizers", payload, authHeader(ADMIN_BASE)),
-  getOrganizerProfile: () => get(ADMIN_BASE, "/camps/organizers/me", authHeader(ADMIN_BASE)),
-  createCamp: (payload) => post(ADMIN_BASE, "/camps/camps", payload, authHeader(ADMIN_BASE)),
+    post(ADMIN_BASE, "/camps/organizers", payload, authHeader(AUTH_BASE)),
+
+  getOrganizerProfile: async function () {
+    const response = await fetch("http://localhost:4001/api/camps/organizers/me", {
+      headers: {
+        Authorization: `Bearer ${this.getToken()}`, // or api.getToken() depending on your context
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      if (response.status === 404) {
+        const error = new Error("Organizer record not found");
+        error.status = 404;
+        throw error;
+      }
+      throw new Error(errorText || "Failed to fetch organizer profile");
+    }
+
+    return await response.json();
+  },
+
+  getOrganizerCamps: () => get(ADMIN_BASE, "/camps/organizers/me/camps", authHeader(AUTH_BASE)),
+  createCamp: (payload) => post(ADMIN_BASE, "/camps/camps", payload, authHeader(AUTH_BASE)),
 
   searchApprovedCamps: ({ state_id, district_id, camp_date }) => {
     const params = new URLSearchParams();
@@ -229,7 +272,11 @@ exportInventoryCSV: async () => {
   deleteAppointment: (id) => del(ADMIN_BASE, `/appointments/${id}`, authHeader(AUTH_BASE)),
 
   // Admin-only Appointments
-  getAdminAppointments: () => get(ADMIN_BASE, "/appointments/admin", authHeader(ADMIN_BASE)),
+  getAdminAppointments: (status = "All") => {
+    return get(ADMIN_BASE, `/appointments/admin?status=${encodeURIComponent(status)}`, authHeader(ADMIN_BASE));
+  },
+
+
   updateAppointmentStatus: (id, payload) =>
     patch(ADMIN_BASE, `/appointments/${id}/status`, payload, authHeader(ADMIN_BASE)),
   deleteAdminAppointment: (id) => del(ADMIN_BASE, `/appointments/${id}`, authHeader(ADMIN_BASE)),
@@ -241,6 +288,14 @@ exportInventoryCSV: async () => {
       headers: authHeader(ADMIN_BASE),
     });
     return res.json();
+  },
+
+  getAdminNotificationCount: async (location) => {
+    const params = new URLSearchParams(location);
+    const res = await fetch(`${ADMIN_BASE}/admin/notifications/count?${params}`, {
+      headers: authHeader(ADMIN_BASE),
+    });
+    return res.json(); // { registrations: 2, appointments: 3 }
   },
 
   acceptDonorNotification: async (donorId) => {
@@ -257,4 +312,41 @@ exportInventoryCSV: async () => {
     });
     return res.json();
   },
+
+  acknowledgeAppointmentNotification: async (appointmentId) => {
+    const res = await fetch(`${ADMIN_BASE}/admin/notifications/appointments/${appointmentId}/acknowledge`, {
+      method: "POST",
+      headers: authHeader(ADMIN_BASE),
+    });
+    return res.json();
+  },
+
+  downloadAppointmentPDF: async (appointmentId) => {
+    const res = await fetch(`${ADMIN_BASE}/api/admin/appointments/${appointmentId}/pdf`, {
+      method: "GET",
+      headers: {
+        ...authHeader(ADMIN_BASE),
+      }
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text || "Failed to download appointment PDF");
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `appointment-${appointmentId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  },
+ 
+  // ================= Chatbot (CHATBOT_BASE)
+sendChat: (text, thread_id = "default") =>
+  post(CHATBOT_BASE, "/chat", { query: text, thread_id }),
+
 };

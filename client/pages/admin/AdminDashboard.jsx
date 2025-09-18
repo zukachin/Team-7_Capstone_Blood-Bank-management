@@ -1,8 +1,8 @@
 // src/components/AdminDashboard.jsx
 import React, { useEffect, useState } from "react";
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Users, MessageSquare, Home, Bell, Package } from "lucide-react"; // Added Package import
-import { api } from "../../lib/api"; // adjust if your path differs
+import { Link, Outlet, useLocation , useNavigate } from "react-router-dom";
+import { Users, MessageSquare, Home, Bell, User, LogOut,Package } from "lucide-react";
+import { api } from "../../lib/api";
 
 export default function AdminDashboard() {
   const location = useLocation();
@@ -10,28 +10,44 @@ export default function AdminDashboard() {
   const [adminProfile, setAdminProfile] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [showNotif, setShowNotif] = useState(false);
+  const [selectedDonor, setSelectedDonor] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [acknowledging, setAcknowledging] = useState(false);
 
-  // control submenu open state
-  const [openMenu, setOpenMenu] = useState(null); // can be "donorRegister" or "donorCounsel"
+  const [openMenu, setOpenMenu] = useState(null);
+
 
   const links = [
     { path: "/admin/donors/register", label: "Donor Register", icon: <Users size={18} /> },
     { path: "/admin/centers", label: "Manage Centres", icon: <Home size={18} /> },
     { path: "/admin/appointments", label: "Manage Appointments", icon: <Home size={18} /> },
+    { path: "/admin/profile", label: "Profile", icon: <User size={18} /> },
+    { path: "/admin/camps", label: "Camps", icon: <Bell size={18} /> },
+    { path: "/admin/summary", label: "Summary", icon: <Bell size={18} /> }
   ];
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true);
         const admin = await api.getAdminProfile();
         setAdminProfile(admin);
 
-        // fetch notifications if your API supports it
-        if (api.getDonorNotifications) {
-          const notif = await api.getDonorNotifications();
+        // Confirm admin profile has location info before fetching notifications
+        const hasLocation = admin?.state_id || admin?.district_id || admin?.centre_id;
+        if (hasLocation) {
+          const notif = await api.getDonorNotifications({
+            state_id: admin.state_id,
+            district_id: admin.district_id,
+            centre_id: admin.centre_id,
+          });
           setNotifications(notif || []);
         }
+        setLoading(false);
       } catch (err) {
+        setError("Failed to load admin data or notifications.");
+        setLoading(false);
         console.error("Error loading admin or notifications", err);
       }
     };
@@ -39,19 +55,52 @@ export default function AdminDashboard() {
   }, []);
 
   const handleAcknowledge = async (donorId) => {
+    if (!adminProfile) return;
+
     try {
-      if (api.acceptDonorNotification) {
-        await api.acceptDonorNotification(donorId);
-      }
+      setAcknowledging(true);
+      const donor = await api.getDonorProfile(donorId);
+      await api.acceptDonorNotification(donorId);
+      setSelectedDonor(donor);
       setShowNotif(false);
+
+      // Refresh notifications after acknowledge
+      const refreshedNotifs = await api.getDonorNotifications({
+        state_id: adminProfile.state_id,
+        district_id: adminProfile.district_id,
+        centre_id: adminProfile.centre_id,
+      });
+      setNotifications(refreshedNotifs || []);
     } catch (err) {
       console.error("Error acknowledging donor:", err);
+    } finally {
+      setAcknowledging(false);
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("token"); // Or whatever key you're using
+    window.location.href = "/admin/login"; // Redirect to login route
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-white">
+        Loading admin data...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-red-600">
+        {error}
+      </div>
+    );
+  }
+  
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-950 via-black to-gray-900 text-white">
-      {/* Sidebar */}
       <aside className="w-64 bg-gradient-to-b from-red-800 via-red-900 to-black p-6 flex flex-col justify-between shadow-xl">
         <div>
           <h2 className="text-2xl font-extrabold mb-10 text-center tracking-wide text-red-50">Admin Panel</h2>
@@ -165,7 +214,6 @@ export default function AdminDashboard() {
               Manage Appointments
             </Link>
 
-            {/* Notification Bell */}
             <button
               onClick={() => setShowNotif(true)}
               className="flex items-center gap-3 mt-8 px-4 py-2 rounded-lg text-sm text-yellow-400 hover:bg-red-700/60 transition"
@@ -189,10 +237,18 @@ export default function AdminDashboard() {
             <Home size={18} />
             Back to Home
           </Link>
+
+          {/* 🔐 Logout Button */}
+          <button
+            onClick={handleLogout}
+            className="flex items-center justify-center gap-2 w-full bg-red-700 text-white py-2 rounded-lg hover:bg-red-800 transition-all"
+          >
+            <LogOut size={18} />
+            Logout
+          </button>
         </div>
       </aside>
 
-      {/* Main content */}
       <main className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-6xl mx-auto bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl shadow-lg p-8">
           {/* Outlet will render the route components; they now use dark backgrounds */}
@@ -200,7 +256,6 @@ export default function AdminDashboard() {
         </div>
       </main>
 
-      {/* Notification Modal */}
       {showNotif && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-900 text-white rounded-xl max-w-md w-full p-6 relative border border-gray-700">
@@ -218,23 +273,20 @@ export default function AdminDashboard() {
             ) : (
               <ul className="space-y-4">
                 {notifications.map((donor) => (
-                  <li key={donor.id} className="bg-gray-800 p-3 rounded-md border border-gray-700">
-                    <p className="text-gray-200 font-medium">{donor.name}</p>
-                    <p className="text-gray-400 text-sm">{donor.email}</p>
-                    <div className="mt-2 flex gap-2">
-                      <button
-                        onClick={() => { handleAcknowledge(donor.id); navigate(`/admin/donors/register?mode=search`); }}
-                        className="bg-red-600 text-white text-sm px-4 py-1 rounded hover:bg-red-700 transition"
-                      >
-                        View in Register
-                      </button>
-                      <button
-                        onClick={() => handleAcknowledge(donor.id)}
-                        className="bg-gray-700 text-white text-sm px-4 py-1 rounded hover:bg-gray-600 transition"
-                      >
-                        Dismiss
-                      </button>
-                    </div>
+                  <li key={donor.id || donor.donor_id} className="bg-gray-100 p-3 rounded-md">
+                    <p className="text-gray-800 font-medium">{donor.name}</p>
+                    <p className="text-gray-500 text-sm">{donor.email}</p>
+                    <button
+                      onClick={() => handleAcknowledge(donor.id || donor.donor_id)}
+                      disabled={acknowledging}
+                      className={`mt-2 text-sm px-4 py-1 rounded ${
+                        acknowledging
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-red-600 hover:bg-red-700 text-white"
+                      } transition`}
+                    >
+                      {acknowledging ? "Processing..." : "View Profile"}
+                    </button>
                   </li>
                 ))}
               </ul>

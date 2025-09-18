@@ -36,6 +36,9 @@ import AdminCenters from "./pages/admin/AdminCenters";
 import AdminAppointments from "./pages/admin/AdminAppointments";
 import { Header } from "../client/components/Header";
 import OrganizeCampPage from "./pages/OrganizeCampPage";
+import AdminCampsPage from "./pages/admin/AdminCampsPage";
+import AdminProfilePage from "./pages/admin/AdminProfilePage";
+import AdminSummary from "./pages/admin/AdminSummary";
 
 import CollectionsPage from "./pages/admin/Collectionspage";
 import CollectionDetail from "./pages/admin/collectionDetail";
@@ -111,6 +114,10 @@ export default function App() {
     <Route path="/admin/testing/:collection_id/edit" element={<TestingEdit />} />
     <Route path="inventory" element={<Inventory/>}/>
     
+              <Route path="camps" element={<AdminCampsPage />} />
+              <Route path="profile" element={<AdminProfilePage />} />
+              <Route path="summary" element={<AdminSummary/>} />
+          
             </Route>
             
 

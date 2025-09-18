@@ -4,6 +4,7 @@ import { gsap } from 'gsap';
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { MessageCircle, X } from 'lucide-react'; // Chatbot icons
+import Chatbot from '../pages/Chatbot'; 
 
 export function HeroSection() {
   const navigate = useNavigate();
@@ -15,12 +16,50 @@ export function HeroSection() {
   const portalsRef = useRef(null);
   const imageRef = useRef(null);
 
-  // Chatbot states
-  const [isChatOpen, setIsChatOpen] = useState(false);
+  // // Chatbot states
+  // const [isChatOpen, setIsChatOpen] = useState(false);
+  // const [messages, setMessages] = useState([
+  //   { from: "bot", text: "Hi! I am your blood donation assistant." }
+  // ]);
+  // const [input, setInput] = useState("");
+    // Chatbot states
   const [messages, setMessages] = useState([
-    { from: "bot", text: "Hi! I am your blood donation assistant." }
+    { from: "bot", text: "Hi! I am your blood donation assistant." },
   ]);
   const [input, setInput] = useState("");
+
+  // Send message handler
+  const sendMessage = async () => {
+    if (!input.trim()) return;
+
+    // Add user message
+    setMessages(prev => [...prev, { from: "user", text: input }]);
+
+    try {
+      const res = await fetch("http://localhost:8000/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          thread_id: "123456",
+          query: input
+        }),
+      });
+
+      const data = await res.json();
+
+      // Extract only the message string from response
+      const botReply = data.response || data.reply || JSON.stringify(data);
+
+      setMessages(prev => [...prev, { from: "bot", text: botReply }]);
+    } catch (err) {
+      setMessages(prev => [
+        ...prev,
+        { from: "bot", text: "Error connecting to agent." },
+      ]);
+    }
+
+    setInput(""); // Clear input after sending
+  };
 
   useEffect(() => {
     const tl = gsap.timeline();
@@ -59,28 +98,28 @@ export function HeroSection() {
     });
   }, []);
 
-  // Send message function
-  const sendMessage = async () => {
-    if (!input.trim()) return;
+  // // Send message function
+  // const sendMessage = async () => {
+  //   if (!input.trim()) return;
 
-    // Add user message
-    setMessages(prev => [...prev, { from: "user", text: input }]);
+  //   // Add user message
+  //   setMessages(prev => [...prev, { from: "user", text: input }]);
     
-    // TODO: Call your Python agent API here
-    try {
-      const res = await fetch("http://localhost:8000/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: input })
-      });
-      const data = await res.json();
-      setMessages(prev => [...prev, { from: "bot", text: data.reply }]);
-    } catch (err) {
-      setMessages(prev => [...prev, { from: "bot", text: "Error connecting to agent." }]);
-    }
+  //   // TODO: Call your Python agent API here
+  //   try {
+  //     const res = await fetch("http://localhost:8000/chat", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ text: input })
+  //     });
+  //     const data = await res.json();
+  //     setMessages(prev => [...prev, { from: "bot", text: data.reply }]);
+  //   } catch (err) {
+  //     setMessages(prev => [...prev, { from: "bot", text: "Error connecting to agent." }]);
+  //   }
 
-    setInput("");
-  };
+  //   setInput("");
+  // };
 
   return (
     <section ref={sectionRef} className="relative bg-black min-h-screen flex flex-col justify-center items-center py-8 md:py-0 overflow-hidden">
@@ -140,7 +179,7 @@ export function HeroSection() {
               </button>
 
               <button
-                onClick={() => navigate("/inventory-portal")}
+                onClick={() => navigate("/admin/login")}
                 className="w-full bg-black/70 hover:bg-red-700 transition-colors rounded-lg p-4 text-center md:text-left space-y-2"
               >
                 <h3 className="text-white text-xl md:text-3xl font-bold" style={{ fontFamily: "Lora, -apple-system, Roboto, Helvetica, sans-serif" }}>Inventory Portal</h3>
@@ -175,28 +214,28 @@ export function HeroSection() {
       </div>
 
       {/* Chatbot Floating Button & Panel */}
-      <div className="fixed bottom-6 right-6 z-50">
+      {/* <div className="fixed bottom-6 right-6 z-50">
         <button
           onClick={() => setIsChatOpen(!isChatOpen)}
           className="bg-red-600 hover:bg-red-700 p-4 rounded-full shadow-lg text-white flex items-center justify-center"
         >
           {isChatOpen ? <X size={24} /> : <MessageCircle size={24} />}
-        </button>
+        </button> */}
 
         {/* Chatbot Panel */}
-{isChatOpen && (
-  <div className="mt-4 w-80 h-96 bg-black text-white shadow-xl rounded-lg flex flex-col overflow-hidden">
+{/* {isChatOpen && (
+  <div className="mt-4 w-80 h-96 bg-black text-white shadow-xl rounded-lg flex flex-col overflow-hidden"> */}
     {/* Header with close button */}
-    <div className="bg-red-600 p-4 flex justify-between items-center font-bold">
+    {/* <div className="bg-red-600 p-4 flex justify-between items-center font-bold">
       <span>Assistant</span>
       <button 
         onClick={() => setIsChatOpen(false)}
         className="text-white hover:text-gray-200"
       >
         <X size={20} />
-      </button>
-    </div>
-
+      </button> */}
+    {/* </div> */}
+// 
     {/* Messages */}
     {/* <div className="flex-1 p-4 overflow-y-auto space-y-2">
       {messages.map((msg, index) => (
@@ -222,9 +261,16 @@ export function HeroSection() {
         className="flex-1 bg-black text-white border border-red-600 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-red-600"
       />
     </div> */}
-  </div>
-)}
-      </div>
+{/* //   </div> */}
+{/* // )} */}
+{/* //       </div> */}
+   {/* Chatbot Component */}
+      <Chatbot
+        messages={messages}
+        input={input}
+        setInput={setInput}
+        sendMessage={sendMessage}
+      />
     </section>
   );
 }

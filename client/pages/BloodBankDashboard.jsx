@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Header } from "../components/Header";
 import {
   BarChart,
   Bar,
@@ -274,6 +275,7 @@ const BloodBankDashboard = () => {
   // Certificate generation & modal handlers (unchanged from your original code)
   const generateCertificate = (donation) => {
     return {
+      
       donorName: userProfile.name,
       donationDate: donation.date,
       hospital: donation.hospital,
@@ -334,6 +336,7 @@ const BloodBankDashboard = () => {
 
   if (loading) {
     return (
+    
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
@@ -344,6 +347,7 @@ const BloodBankDashboard = () => {
   }
 
   return (
+      
     <div className="min-h-screen bg-black text-white">
       {/* Navigation Bar */}
       <header
@@ -378,7 +382,8 @@ const BloodBankDashboard = () => {
             </div>
 
             {/* Navigation buttons */}
-            <div className="hidden md:flex space-x-9">
+            <header/>
+            {/* <div className="hidden md:flex space-x-9">
               <a
                 href="/"
                 className="hover:text-red-400 text-xl transition-colors"
@@ -386,7 +391,7 @@ const BloodBankDashboard = () => {
                 Home
               </a>
               <a
-                href="/looking-for-blood"
+                href="/stock-availability"
                 className="hover:text-red-400 text-xl transition-colors"
               >
                 Looking for Blood
@@ -403,7 +408,7 @@ const BloodBankDashboard = () => {
               >
                 Blood Bank Dashboard
               </a>
-            </div>
+            </div> */}
 
             {/* User Profile */}
             <div className="flex items-center space-x-4">

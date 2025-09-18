@@ -3,6 +3,9 @@ import { api } from "../../lib/api";
 
 export default function AdminAppointments() {
   const [appointments, setAppointments] = useState([]);
+  const [updatingId, setUpdatingId] = useState(null); // loading state
+
+  const allowedStatusActions = ["Pending", "Approved", "Rejected"];
 
   useEffect(() => {
     fetchAppointments();
@@ -10,7 +13,7 @@ export default function AdminAppointments() {
 
   const fetchAppointments = async () => {
     try {
-      const data = await api.getAdminAppointments();
+      const data = await api.getAdminAppointments("All");
       setAppointments(data.appointments || []);
     } catch (err) {
       console.error("Error fetching appointments:", err);
@@ -18,13 +21,43 @@ export default function AdminAppointments() {
   };
 
   const handleStatusChange = async (id, status) => {
-    try {
-      await api.updateAppointmentStatus(id, { status });
-      fetchAppointments(); // refresh
-    } catch (err) {
-      console.error("Error updating status:", err);
+  try {
+    setUpdatingId(id);
+
+    let response;
+    if (status === "Approved") {
+      response = await api.updateAppointmentStatus(id, { action: "approve" });
+    } else if (status === "Rejected") {
+      const reason = prompt("Please enter a rejection reason (optional):", "");
+      response = await api.updateAppointmentStatus(id, { action: "reject", rejection_reason: reason || null });
+    } else {
+      console.warn("Unsupported status change:", status);
+      return;
     }
-  };
+
+    // Update status in local state
+    setAppointments((prev) =>
+      prev.map((a) =>
+        a.appointment_id === id
+          ? {
+              ...a,
+              status,
+              token_no: status === "Approved" ? response?.token_no || a.token_no : null,
+              rejection_reason: status === "Rejected" ? response?.rejection_reason || reason : null,
+              approved_at: new Date().toISOString(),
+              approved_by: a.approved_by || "You", // Update based on your auth logic
+              updated_at: new Date().toISOString(),
+            }
+          : a
+      )
+    );
+  } catch (err) {
+    console.error("Error updating status:", err);
+  } finally {
+    setUpdatingId(null);
+  }
+};
+
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this appointment?")) return;
@@ -34,6 +67,11 @@ export default function AdminAppointments() {
     } catch (err) {
       console.error("Error deleting appointment:", err);
     }
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "-";
+    return new Date(dateStr).toLocaleString(); // Format like: 9/18/2025, 10:30:00 AM
   };
 
   return (
@@ -46,7 +84,6 @@ export default function AdminAppointments() {
             <tr className="bg-gray-900 text-gray-200">
               <th className="p-4 border">ID</th>
               <th className="p-4 border">User ID</th>
-              <th className="p-4 border">State ID</th>
               <th className="p-4 border">District ID</th>
               <th className="p-4 border">Center ID</th>
               <th className="p-4 border">Date</th>
@@ -70,7 +107,6 @@ export default function AdminAppointments() {
                 <tr key={a.appointment_id} className="hover:bg-gray-800">
                   <td className="p-4 border">{a.appointment_id}</td>
                   <td className="p-4 border">{a.user_id}</td>
-                  <td className="p-4 border">{a.state_id}</td>
                   <td className="p-4 border">{a.district_id}</td>
                   <td className="p-4 border">{a.centre_id}</td>
                   <td className="p-4 border">{a.appointment_date}</td>
@@ -81,23 +117,31 @@ export default function AdminAppointments() {
                   <td className="p-4 border">
                     <select
                       value={a.status}
+                      disabled={
+                        updatingId === a.appointment_id ||
+                        a.status === "Approved" ||
+                        a.status === "Rejected"
+                      }
                       onChange={(e) =>
                         handleStatusChange(a.appointment_id, e.target.value)
                       }
                       className="bg-gray-800 text-white rounded p-1 w-full"
                     >
-                      <option value="Pending">Pending</option>
-                      <option value="Approved">Approved</option>
-                      <option value="Rejected">Rejected</option>
-                      <option value="Cancelled">Cancelled</option>
+                      {allowedStatusActions.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {updatingId === a.appointment_id && opt === a.status
+                            ? "Updating..."
+                            : opt}
+                        </option>
+                      ))}
                     </select>
                   </td>
                   <td className="p-4 border">{a.token_no || "-"}</td>
                   <td className="p-4 border">{a.rejection_reason || "-"}</td>
-                  <td className="p-4 border">{a.created_at}</td>
-                  <td className="p-4 border">{a.updated_at}</td>
+                  <td className="p-4 border">{formatDate(a.created_at)}</td>
+                  <td className="p-4 border">{formatDate(a.updated_at)}</td>
                   <td className="p-4 border">{a.approved_by || "-"}</td>
-                  <td className="p-4 border">{a.approved_at || "-"}</td>
+                  <td className="p-4 border">{formatDate(a.approved_at)}</td>
                   <td className="p-4 border">
                     <button
                       className="px-2 py-1 bg-red-600 hover:bg-red-700 rounded"
@@ -110,7 +154,7 @@ export default function AdminAppointments() {
               ))
             ) : (
               <tr>
-                <td colSpan="18" className="p-3 text-center text-gray-500">
+                <td colSpan="17" className="p-3 text-center text-gray-500">
                   No appointments available.
                 </td>
               </tr>

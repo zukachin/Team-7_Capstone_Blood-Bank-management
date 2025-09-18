@@ -30,6 +30,12 @@ function getAdminToken() {
   }
 }
 
+// Helper: Capitalize first letter (e.g. "pending" => "Pending")
+function capitalizeStatus(status) {
+  if (!status || typeof status !== "string") return status;
+  return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+}
+
 // ✅ Auth header returns correct token based on base URL
 function authHeader(base = AUTH_BASE) {
   const token = base === ADMIN_BASE ? getAdminToken() : getToken();
@@ -123,14 +129,13 @@ export const api = {
   getAdminProfile: () => {
     return get(ADMIN_BASE, "/admins", authHeader(ADMIN_BASE));
   },
-  
+
   // Centres & Camps (ADMIN_BASE)
   getCentresByDistrict: (districtId) =>
     get(ADMIN_BASE, `/centres/public/by-district?district_id=${encodeURIComponent(districtId)}`),
   registerOrganizer: (payload) =>
     post(ADMIN_BASE, "/camps/organizers", payload, authHeader(AUTH_BASE)),
 
-  // getOrganizerProfile: () => get(ADMIN_BASE, "/camps/organizers/me", authHeader(AUTH_BASE)),
   getOrganizerProfile: async function () {
     const response = await fetch("http://localhost:4001/api/camps/organizers/me", {
       headers: {
@@ -169,7 +174,11 @@ export const api = {
   deleteAppointment: (id) => del(ADMIN_BASE, `/appointments/${id}`, authHeader(AUTH_BASE)),
 
   // Admin-only Appointments
-  getAdminAppointments: () => get(ADMIN_BASE, "/appointments/admin", authHeader(ADMIN_BASE)),
+  getAdminAppointments: (status = "All") => {
+    return get(ADMIN_BASE, `/appointments/admin?status=${encodeURIComponent(status)}`, authHeader(ADMIN_BASE));
+  },
+
+
   updateAppointmentStatus: (id, payload) =>
     patch(ADMIN_BASE, `/appointments/${id}/status`, payload, authHeader(ADMIN_BASE)),
   deleteAdminAppointment: (id) => del(ADMIN_BASE, `/appointments/${id}`, authHeader(ADMIN_BASE)),
@@ -181,6 +190,14 @@ export const api = {
       headers: authHeader(ADMIN_BASE),
     });
     return res.json();
+  },
+
+  getAdminNotificationCount: async (location) => {
+    const params = new URLSearchParams(location);
+    const res = await fetch(`${ADMIN_BASE}/admin/notifications/count?${params}`, {
+      headers: authHeader(ADMIN_BASE),
+    });
+    return res.json(); // { registrations: 2, appointments: 3 }
   },
 
   acceptDonorNotification: async (donorId) => {
@@ -197,4 +214,12 @@ export const api = {
     });
     return res.json();
   },
+
+  acknowledgeAppointmentNotification: async (appointmentId) => {
+    const res = await fetch(`${ADMIN_BASE}/admin/notifications/appointments/${appointmentId}/acknowledge`, {
+      method: "POST",
+      headers: authHeader(ADMIN_BASE),
+    });
+    return res.json();
+  }
 };

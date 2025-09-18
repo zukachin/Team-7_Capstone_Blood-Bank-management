@@ -175,7 +175,7 @@ const RegisterDonor = () => {
       appointment_time: formData.appointment_time,
       weight: Number(formData.weight),
       under_medication: formData.under_medication,
-      last_donation_date: formData.last_donation_date || null,
+      last_donation_date: formData.last_donation_date.trim() === "" ? null : formData.last_donation_date,
     };
 
     try {

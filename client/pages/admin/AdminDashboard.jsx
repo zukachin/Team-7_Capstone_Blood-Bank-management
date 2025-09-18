@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { Users, MessageSquare, Home, Bell, User } from "lucide-react";
-import { api } from "../../lib/api"; // Adjust as needed
-import path from "path";
+import { api } from "../../lib/api";
 
 export default function AdminDashboard() {
   const location = useLocation();
@@ -11,13 +10,15 @@ export default function AdminDashboard() {
   const [notifications, setNotifications] = useState([]);
   const [showNotif, setShowNotif] = useState(false);
   const [selectedDonor, setSelectedDonor] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [acknowledging, setAcknowledging] = useState(false);
 
   const links = [
     { path: "/admin/donors/register", label: "Donor Register", icon: <Users size={18} /> },
     { path: "/admin/donors/counseling", label: "Donor Counseling", icon: <MessageSquare size={18} /> },
     { path: "/admin/centers", label: "Manage Centres", icon: <Home size={18} /> },
     { path: "/admin/appointments", label: "Manage Appointments", icon: <Home size={18} /> },
-    // { path: "/admin/notifications", label: "Notifications", icon: <Bell size={18} /> },
     { path: "/admin/profile", label: "Profile", icon: <User size={18} /> },
     { path: "/admin/camps", label: "Camps", icon: <Bell size={18} /> }
   ];
@@ -25,11 +26,13 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true);
         const admin = await api.getAdminProfile();
         setAdminProfile(admin);
 
-        // Fetch notifications for matching donor registrations
-        if (admin?.state_id || admin?.district_id || admin?.centre_id) {
+        // Confirm admin profile has location info before fetching notifications
+        const hasLocation = admin?.state_id || admin?.district_id || admin?.centre_id;
+        if (hasLocation) {
           const notif = await api.getDonorNotifications({
             state_id: admin.state_id,
             district_id: admin.district_id,
@@ -37,7 +40,10 @@ export default function AdminDashboard() {
           });
           setNotifications(notif || []);
         }
+        setLoading(false);
       } catch (err) {
+        setError("Failed to load admin data or notifications.");
+        setLoading(false);
         console.error("Error loading admin or notifications", err);
       }
     };
@@ -46,19 +52,47 @@ export default function AdminDashboard() {
   }, []);
 
   const handleAcknowledge = async (donorId) => {
+    if (!adminProfile) return;
+
     try {
-      const donor = await api.getDonorProfile(donorId); // fetch donor details
-      await api.acceptDonorNotification(donorId); // mark as seen
+      setAcknowledging(true);
+      const donor = await api.getDonorProfile(donorId);
+      await api.acceptDonorNotification(donorId);
       setSelectedDonor(donor);
       setShowNotif(false);
+
+      // Refresh notifications after acknowledge
+      const refreshedNotifs = await api.getDonorNotifications({
+        state_id: adminProfile.state_id,
+        district_id: adminProfile.district_id,
+        centre_id: adminProfile.centre_id,
+      });
+      setNotifications(refreshedNotifs || []);
     } catch (err) {
       console.error("Error acknowledging donor:", err);
+    } finally {
+      setAcknowledging(false);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-white">
+        Loading admin data...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-red-600">
+        {error}
+      </div>
+    );
+  }
+  
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-950 via-black to-gray-900 text-white">
-      {/* Sidebar */}
       <aside className="w-64 bg-gradient-to-b from-red-800 via-red-900 to-black p-6 flex flex-col justify-between shadow-xl">
         <div>
           <h2 className="text-2xl font-extrabold mb-10 text-center tracking-wide text-red-50">
@@ -70,17 +104,17 @@ export default function AdminDashboard() {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ${location.pathname === link.path
+                className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ${
+                  location.pathname === link.path
                     ? "bg-red-600/70 text-white font-bold shadow-md"
                     : "text-gray-300 hover:bg-red-700/70 hover:text-white"
-                  }`}
+                }`}
               >
                 {link.icon}
                 {link.label}
               </Link>
             ))}
 
-            {/* Notification Bell */}
             <button
               onClick={() => setShowNotif(true)}
               className="flex items-center gap-3 mt-8 px-4 py-2 rounded-lg text-sm text-yellow-400 hover:bg-red-700/60 transition"
@@ -107,14 +141,12 @@ export default function AdminDashboard() {
         </div>
       </aside>
 
-      {/* Main content */}
       <main className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-6xl mx-auto bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl shadow-lg p-8">
           <Outlet context={{ adminProfile, donors, selectedDonor }} />
         </div>
       </main>
 
-      {/* Notification Modal */}
       {showNotif && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
           <div className="bg-white text-black rounded-xl max-w-md w-full p-6 relative">
@@ -132,14 +164,19 @@ export default function AdminDashboard() {
             ) : (
               <ul className="space-y-4">
                 {notifications.map((donor) => (
-                  <li key={donor.id} className="bg-gray-100 p-3 rounded-md">
+                  <li key={donor.id || donor.donor_id} className="bg-gray-100 p-3 rounded-md">
                     <p className="text-gray-800 font-medium">{donor.name}</p>
                     <p className="text-gray-500 text-sm">{donor.email}</p>
                     <button
-                      onClick={() => handleAcknowledge(donor.id)}
-                      className="mt-2 bg-red-600 text-white text-sm px-4 py-1 rounded hover:bg-red-700 transition"
+                      onClick={() => handleAcknowledge(donor.id || donor.donor_id)}
+                      disabled={acknowledging}
+                      className={`mt-2 text-sm px-4 py-1 rounded ${
+                        acknowledging
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-red-600 hover:bg-red-700 text-white"
+                      } transition`}
                     >
-                      View Profile
+                      {acknowledging ? "Processing..." : "View Profile"}
                     </button>
                   </li>
                 ))}

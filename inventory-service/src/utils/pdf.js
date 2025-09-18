@@ -1,4 +1,3 @@
-// src/utils/pdf.js
 const PDFDocument = require('pdfkit');
 
 function formatDateLocal(v) {
@@ -83,4 +82,62 @@ function generateDonationCertificate(donor = {}, collection = {}, tests = {}, ov
   });
 }
 
-module.exports = { generateDonationCertificate };
+/**
+ * generateAppointmentLetter(donor, appointment, centre)
+ * returns Promise<Buffer>
+ */
+function generateAppointmentLetter(donor = {}, appointment = {}, centre = {}) {
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({ size: 'A4', margin: 50 });
+      const bufs = [];
+      doc.on('data', (d) => bufs.push(d));
+      doc.on('end', () => resolve(Buffer.concat(bufs)));
+
+      // Title
+      doc.fontSize(20).text('Blood Donation Appointment Letter', { align: 'center' });
+      doc.moveDown(1);
+
+      // Donor details
+      doc.fontSize(12).text(`Donor Name: ${donor.name || '-'}`);
+      doc.text(`Email: ${donor.email || '-'}`);
+      doc.text(`Phone: ${donor.phone || '-'}`);
+      doc.moveDown(1);
+
+      // Appointment details
+      doc.fontSize(14).text('Appointment Details', { underline: true });
+      doc.moveDown(0.5);
+      doc.fontSize(12);
+      doc.text(`Appointment ID: ${appointment.appointment_id || '-'}`);
+      doc.text(`Date: ${formatDateLocal(appointment.appointment_date || appointment.date)}`);
+      doc.text(`Time: ${appointment.appointment_time || 'To be confirmed'}`);
+      doc.text(`Centre: ${centre.name || appointment.centre_name || appointment.centre_id}`);
+      if (centre.address || appointment.centre_address) {
+        doc.text(`Centre Address: ${centre.address || appointment.centre_address}`);
+      }
+
+      doc.moveDown(1);
+      doc.text('Please arrive 10-15 minutes early and bring a valid ID for verification.');
+
+      doc.moveDown(2);
+      doc.text('Thank you for your valuable contribution to saving lives!', {
+        align: 'center',
+        italics: true,
+      });
+
+      doc.moveDown(2);
+      doc.text('Authorized Signatory', { align: 'right' });
+      doc.moveDown();
+      doc.text('____________________', { align: 'right' });
+
+      doc.end();
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+module.exports = {
+  generateDonationCertificate,
+  generateAppointmentLetter
+};

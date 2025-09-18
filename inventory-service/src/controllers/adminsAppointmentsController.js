@@ -163,13 +163,86 @@ exports.updateAppointmentStatus = async (req, res) => {
       if (appointment.user_email) {
         await sendMail(
           appointment.user_email,
-          "Appointment Approved",
-          `Hi ${appointment.user_name || ''}, your appointment has been approved.\n\nDate: ${scheduled_date || appointment.appointment_date}\nTime: ${scheduled_time || appointment.appointment_time}\nToken: ${token_no}`,
-          `<p>Hi <b>${appointment.user_name || ''}</b>,</p>
-           <p>Your appointment has been <b>Approved</b>.</p>
-           <p>Date: ${scheduled_date || appointment.appointment_date}<br>
-              Time: ${scheduled_time || appointment.appointment_time}<br>
-              Token No: <b>${token_no}</b></p>`
+          "Life Link Appointment Update",
+        
+      `
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f9fafb;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        max-width: 600px;
+        margin: 30px auto;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        padding: 25px;
+      }
+      .header {
+        background-color: #2a9d8f;
+        color: #fff;
+        text-align: center;
+        padding: 15px;
+        border-radius: 12px 12px 0 0;
+        font-size: 20px;
+        font-weight: bold;
+      }
+      .content {
+        color: #333;
+        font-size: 15px;
+        line-height: 1.6;
+      }
+      .details {
+        background: #f1f1f1;
+        padding: 12px;
+        border-left: 4px solid #2a9d8f;
+        margin: 15px 0;
+        border-radius: 6px;
+        font-style: normal;
+      }
+      .footer {
+        text-align: center;
+        color: #777;
+        font-size: 13px;
+        margin-top: 20px;
+      }
+      .footer b {
+        color: #2a9d8f;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">Life Link Appointment Approved</div>
+      <div class="content">
+        <p>Dear <b>${appointment.user_name || ''}</b>,</p>
+        <p>
+          We are pleased to inform you that your appointment request with <b>Life Link</b> has been <b style="color:#2a9d8f;">approved</b>.
+        </p>
+        <div class="details">
+          <b>Date:</b> ${scheduled_date || appointment.appointment_date}<br>
+          <b>Time:</b> ${scheduled_time || appointment.appointment_time}<br>
+          <b>Token No:</b> ${token_no}
+        </div>
+        <p>
+          Please arrive on time and carry any necessary documents. If you have questions, feel free to contact our support team.
+        </p>
+        <p>Best regards,<br/><b>Life Link Team</b></p>
+      </div>
+      <div class="footer">
+        © ${new Date().getFullYear()} <b>Life Link</b> | All rights reserved
+      </div>
+    </div>
+  </body>
+</html>
+`
         );
       } else {
         console.warn('No user_email for appointment', appointmentId);

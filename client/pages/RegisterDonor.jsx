@@ -72,9 +72,8 @@ const RegisterDonor = () => {
   const handleInputChange = async (e) => {
     const { name, value } = e.target;
 
-    // Clear validation error for this field when user starts typing
     if (validationErrors[name]) {
-      setValidationErrors(prev => ({
+      setValidationErrors((prev) => ({
         ...prev,
         [name]: ""
       }));
@@ -136,10 +135,8 @@ const RegisterDonor = () => {
   };
 
   const handleSubmit = async () => {
-    // Clear previous validation errors
     setValidationErrors({});
 
-    // Basic client-side validation
     const errors = {};
     
     if (!formData.appointment_date) {
@@ -180,12 +177,22 @@ const RegisterDonor = () => {
 
     try {
       await api.createAppointment(payload);
-      toast.success("Appointment booked successfully!");
+
+      // Cute success popup
+      toast.success("🎉 Your donation slot is booked! Thank you ❤️", {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "dark",
+      });
+
       navigate("/donor-portal");
     } catch (err) {
       console.error("Appointment booking failed:", err);
       
-      // Handle backend validation errors
       if (err.response?.data?.errors) {
         const backendErrors = {};
         err.response.data.errors.forEach(error => {
@@ -310,72 +317,55 @@ const RegisterDonor = () => {
           </button>
         </div>
 
-        <ToastContainer position="top-right" autoClose={3000} />
+        <ToastContainer />
       </div>
     </div>
   );
 };
 
-// Enhanced Input component with error handling
+// Input component
 const InputField = ({ label, name, type = "text", value, onChange, error, ...props }) => (
   <div className="flex flex-col">
-    <label htmlFor={name} className="mb-1 font-medium text-sm">
-      {label}
-    </label>
+    <label htmlFor={name} className="mb-1 font-medium text-sm">{label}</label>
     <input
       type={type}
       id={name}
       name={name}
       value={value}
       onChange={onChange}
-      className={`p-2 rounded bg-neutral-800 border ${
-        error ? 'border-red-500' : 'border-neutral-700'
-      } focus:outline-none focus:ring-2 focus:ring-red-600 text-white`}
+      className={`p-2 rounded bg-neutral-800 border ${error ? 'border-red-500' : 'border-neutral-700'} focus:outline-none focus:ring-2 focus:ring-red-600 text-white`}
       {...props}
     />
     {error && <span className="text-red-500 text-xs mt-1">{error}</span>}
   </div>
 );
 
-// Enhanced Select component with error handling and proper placeholder
+// Select component
 const SelectField = ({ label, name, value, onChange, options, error, disabled = false }) => (
   <div className="flex flex-col">
-    <label htmlFor={name} className="mb-1 font-medium text-sm">
-      {label}
-    </label>
+    <label htmlFor={name} className="mb-1 font-medium text-sm">{label}</label>
     <select
       id={name}
       name={name}
       value={value}
       onChange={onChange}
       disabled={disabled}
-      className={`p-2 rounded bg-neutral-800 border ${
-        error ? 'border-red-500' : 'border-neutral-700'
-      } focus:outline-none focus:ring-2 focus:ring-red-600 text-white ${
-        disabled ? 'opacity-50 cursor-not-allowed' : ''
-      }`}
+      className={`p-2 rounded bg-neutral-800 border ${error ? 'border-red-500' : 'border-neutral-700'} focus:outline-none focus:ring-2 focus:ring-red-600 text-white ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
     >
       <option value="">-- Select {label} --</option>
       {options.map((opt) => (
-        <option key={opt.value} value={opt.value}>
-          {opt.label}
-        </option>
+        <option key={opt.value} value={opt.value}>{opt.label}</option>
       ))}
     </select>
     {error && <span className="text-red-500 text-xs mt-1">{error}</span>}
   </div>
 );
 
-// ReadOnly field component
+// ReadOnly component
 const ReadOnlyField = ({ label, value }) => (
   <div className="flex flex-col">
     <label className="mb-1 font-medium text-sm">{label}</label>
-    <input
-      type="text"
-      value={value}
-      readOnly
-      className="p-2 rounded bg-neutral-800 border border-neutral-700 text-gray-400"
-    />
+    <input type="text" value={value} readOnly className="p-2 rounded bg-neutral-800 border border-neutral-700 text-gray-400" />
   </div>
 );
 

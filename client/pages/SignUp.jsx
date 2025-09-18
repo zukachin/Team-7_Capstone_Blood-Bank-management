@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify"; // ✅ added
+import "react-toastify/dist/ReactToastify.css"; // ✅ added
 import { api } from "../lib/api";
 
 /**
@@ -33,7 +35,8 @@ export default function SignUp() {
 
   // load states
   useEffect(() => {
-    api.getStates()
+    api
+      .getStates()
       .then((res) => {
         // backend returns { states: [...] } earlier — handle both shapes
         const arr = res?.states ?? res?.data ?? res ?? [];
@@ -51,7 +54,8 @@ export default function SignUp() {
       setForm((s) => ({ ...s, district_id: "" }));
       return;
     }
-    api.getDistrictsByState(form.state_id)
+    api
+      .getDistrictsByState(form.state_id)
       .then((res) => {
         const arr = res?.districts ?? res?.data ?? res ?? [];
         setDistricts(Array.isArray(arr) ? arr : []);
@@ -64,7 +68,8 @@ export default function SignUp() {
   // load blood groups
   useEffect(() => {
     if (!api.getBloodGroups) return;
-    api.getBloodGroups()
+    api
+      .getBloodGroups()
       .then((res) => {
         // many backends return array directly; some wrap in { blood_groups: [...] }
         const arr = res?.blood_groups ?? res?.data ?? res ?? [];
@@ -123,12 +128,59 @@ export default function SignUp() {
       const res = await api.register(payload);
       // backend may return { userId } or similar
       const userId = res?.userId || res?.user_id || res?.id || "";
-      navigate(`/verify-otp?userId=${encodeURIComponent(userId)}&email=${encodeURIComponent(form.email)}`);
+
+      // ✅ subtle success toast
+      toast.success("🩸 Successfully joined the donor family", {
+        position: "top-center",
+        autoClose: 6000,
+        hideProgressBar: true,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: false,
+        icon: false, // 🚫 no green tick
+        theme: "dark",
+        style: {
+          background: "#3c3c3cff", // softer black
+          color: "#fca5a5", // soft rose red
+          fontWeight: "500",
+          border: "1px solid #374151", // subtle border
+          borderRadius: "10px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+        },
+      });
+
+      // redirect after a short delay
+      setTimeout(() => {
+        navigate(
+          `/verify-otp?userId=${encodeURIComponent(userId)}&email=${encodeURIComponent(
+            form.email
+          )}`
+        );
+      }, 1800);
     } catch (error) {
       console.error("Register failed:", error);
-      // If backend returns structured errors, show a friendly message
       const detail = error?.body ?? error?.message;
       setErr(typeof detail === "string" ? detail : "Failed to register");
+
+      // ❌ error toast
+      toast.error("❌ Registration failed. Please try again.", {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: true,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: false,
+        icon: false,
+        theme: "dark",
+        style: {
+          background: "#3c3c3cff",
+          color: "#f87171", // stronger red for error
+          fontWeight: "500",
+          border: "1px solid #7f1d1d",
+          borderRadius: "10px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+        },
+      });
     } finally {
       setLoading(false);
     }
@@ -144,34 +196,61 @@ export default function SignUp() {
 
           <div>
             <label className="block mb-2">Full Name</label>
-            <input name="name" value={form.name} onChange={onChange} required
-              className="w-full bg-black border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none" />
+            <input
+              name="name"
+              value={form.name}
+              onChange={onChange}
+              required
+              className="w-full bg-black border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none"
+            />
           </div>
 
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block mb-2">Email</label>
-              <input name="email" type="email" value={form.email} onChange={onChange} required
-                className="w-full bg-black border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none" />
+              <input
+                name="email"
+                type="email"
+                value={form.email}
+                onChange={onChange}
+                required
+                className="w-full bg-black border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none"
+              />
             </div>
             <div>
               <label className="block mb-2">Phone</label>
-              <input name="phone" value={form.phone} onChange={onChange} required
-                className="w-full bg-black border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none" />
+              <input
+                name="phone"
+                value={form.phone}
+                onChange={onChange}
+                required
+                className="w-full bg-black border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none"
+              />
             </div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block mb-2">Password</label>
-              <input name="password" type="password" value={form.password} onChange={onChange} required
-                className="w-full bg-black border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none" />
+              <input
+                name="password"
+                type="password"
+                value={form.password}
+                onChange={onChange}
+                required
+                className="w-full bg-black border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none"
+              />
             </div>
 
             <div>
               <label className="block mb-2">Gender</label>
-              <select name="gender" value={form.gender} onChange={onChange} required
-                className="w-full bg-black border-b border-gray-600 py-2 text-white">
+              <select
+                name="gender"
+                value={form.gender}
+                onChange={onChange}
+                required
+                className="w-full bg-black border-b border-gray-600 py-2 text-white"
+              >
                 <option value="">Select gender</option>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
@@ -183,14 +262,26 @@ export default function SignUp() {
           <div className="grid md:grid-cols-3 gap-4">
             <div>
               <label className="block mb-2">Age</label>
-              <input name="age" type="number" min="18" value={form.age} onChange={onChange} required
-                className="w-full bg-black border-b border-gray-600 py-2 text-white" />
+              <input
+                name="age"
+                type="number"
+                min="18"
+                value={form.age}
+                onChange={onChange}
+                required
+                className="w-full bg-black border-b border-gray-600 py-2 text-white"
+              />
             </div>
 
             <div>
               <label className="block mb-2">Blood Group</label>
-              <select name="blood_group_id" value={form.blood_group_id} onChange={onChange} required
-                className="w-full bg-black border-b border-gray-600 py-2 text-white">
+              <select
+                name="blood_group_id"
+                value={form.blood_group_id}
+                onChange={onChange}
+                required
+                className="w-full bg-black border-b border-gray-600 py-2 text-white"
+              >
                 <option value="">Select blood group</option>
                 {bloodGroups.map((bg) => (
                   <option key={bg.id} value={bg.id}>
@@ -202,8 +293,13 @@ export default function SignUp() {
 
             <div>
               <label className="block mb-2">State</label>
-              <select name="state_id" value={form.state_id} onChange={onChange} required
-                className="w-full bg-black border-b border-gray-600 py-2 text-white">
+              <select
+                name="state_id"
+                value={form.state_id}
+                onChange={onChange}
+                required
+                className="w-full bg-black border-b border-gray-600 py-2 text-white"
+              >
                 <option value="">Select state</option>
                 {states.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -216,8 +312,13 @@ export default function SignUp() {
 
           <div>
             <label className="block mb-2">District</label>
-            <select name="district_id" value={form.district_id} onChange={onChange} required
-              className="w-full bg-black border-b border-gray-600 py-2 text-white">
+            <select
+              name="district_id"
+              value={form.district_id}
+              onChange={onChange}
+              required
+              className="w-full bg-black border-b border-gray-600 py-2 text-white"
+            >
               <option value="">Select district</option>
               {districts.map((d) => (
                 <option key={d.id} value={d.id}>
@@ -229,23 +330,37 @@ export default function SignUp() {
 
           <div>
             <label className="block mb-2">Address</label>
-            <textarea name="address" value={form.address} onChange={onChange} rows={2}
-              className="w-full bg-black border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none" />
+            <textarea
+              name="address"
+              value={form.address}
+              onChange={onChange}
+              rows={2}
+              className="w-full bg-black border-b border-gray-600 py-2 text-white focus:border-red-500 focus:outline-none"
+            />
           </div>
 
           <div className="flex items-center justify-between gap-4">
-            <button type="submit" disabled={loading}
-              className="bg-red-600 hover:bg-red-700 px-6 py-2 rounded-lg font-semibold disabled:opacity-60">
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-red-600 hover:bg-red-700 px-6 py-2 rounded-lg font-semibold disabled:opacity-60"
+            >
               {loading ? "Registering..." : "Create Account"}
             </button>
 
-            <button type="button" onClick={() => navigate("/login")}
-              className="bg-transparent border border-gray-700 hover:border-red-500 px-6 py-2 rounded-lg">
+            <button
+              type="button"
+              onClick={() => navigate("/login")}
+              className="bg-transparent border border-gray-700 hover:border-red-500 px-6 py-2 rounded-lg"
+            >
               Back to Login
             </button>
           </div>
         </form>
       </div>
+
+      {/* ✅ Toast container */}
+      <ToastContainer />
     </div>
   );
 }

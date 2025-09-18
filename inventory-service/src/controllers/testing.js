@@ -21,6 +21,20 @@ function enforceLocationScope(role, userCentre, collectionCentre) {
 }
 
 /**
+ * Helper function to send email consistently
+ */
+async function sendEmailNotification(recipientEmail, subject, text, html, attachments = []) {
+  try {
+    // Always use mailerAttach for consistency
+    await mailerAttach.sendMailWithAttachment(recipientEmail, subject, text, html, attachments);
+    return { success: true };
+  } catch (error) {
+    console.error('Email sending failed:', error);
+    return { success: false, error };
+  }
+}
+
+/**
  * PATCH /api/testing/:collection_id
  * Immediate send of result email (Passed => attach PDF)
  */
@@ -45,7 +59,7 @@ async function updateTesting(req, res) {
     }
     const coll = collR.rows[0];
 
-    if (!enforceLocationScope(role, user.centre_id, coll.centre_id)) {
+    if (!enforceLocationScope(role, user.centreId, coll.centre_id)) {
       await client.query('ROLLBACK');
       return res.status(403).json({ message: 'Forbidden: not authorized for this centre/camp' });
     }
@@ -96,6 +110,8 @@ async function updateTesting(req, res) {
     const certUrl = `${portalBase}/donor/donations/${donor.donor_id}/certificate/${collection_id}`;
     const recipientEmail = donor.email || null;
 
+    console.log('Preparing to send email to:', recipientEmail, 'Overall status:', overall_status);
+
     if (overall_status === 'Passed') {
       const nextRes = await pool.query("SELECT (COALESCE($1::timestamp, now())::date + INTERVAL '90 days')::date AS next_date", [tested_at]);
       const nextEligibleDate = nextRes.rows[0].next_date;
@@ -106,13 +122,13 @@ async function updateTesting(req, res) {
         // ignore
       }
 
-      const subject = 'Life Link — Donation Test Passed';
+      const subject = 'Life Link – Donation Test Passed';
       const text = `Hello ${donor.donor_name || 'Donor'},\n\nYour donation (ID: ${collection_id}) tested on ${testedAtStr} and passed all screening tests.\n\nYou can view your donations and download your donation certificate from your donor portal:\n${portalUrl}\n\nThank you for your donation.`;
       const html = `<!doctype html><html><body>
         <h2>Donation Test Passed</h2>
         <p>Hello ${donor.donor_name || 'Donor'},</p>
         <p>Your donation (ID: <b>${collection_id}</b>) tested on <b>${testedAtStr}</b> and passed all screening tests.</p>
-        <p><a href="${portalUrl}">View donations</a> — <a href="${certUrl}">Download certificate</a></p>
+        <p><a href="${portalUrl}">View donations</a> – <a href="${certUrl}">Download certificate</a></p>
         </body></html>`;
 
       // generate PDF
@@ -124,32 +140,29 @@ async function updateTesting(req, res) {
       }
 
       if (recipientEmail) {
-        try {
-          // prefer mailerAttach (nodemailer) to include attachment
-          if (pdfBuffer) {
-            await mailerAttach.sendMailWithAttachment(recipientEmail, subject, text, html, [
-              { filename: `certificate_${collection_id}.pdf`, content: pdfBuffer }
-            ]);
-          } else {
-            // fallback: send without attachment using legacy sendMail if available
-            if (sendMail) await sendMail(recipientEmail, subject, text, html);
-            else await mailerAttach.sendMailWithAttachment(recipientEmail, subject, text, html, []);
-          }
+        const emailResult = await sendEmailNotification(
+          recipientEmail, 
+          subject, 
+          text, 
+          html, 
+          pdfBuffer ? [{ filename: `certificate_${collection_id}.pdf`, content: pdfBuffer }] : []
+        );
 
-          // store notification as Sent
-          await pool.query(
-            `INSERT INTO public.notifications (user_id, camp_id, message, subject, body, recipient_email, is_read, scheduled_at, status, channel, created_at, sent_at)
-             VALUES ($1, $2, $3, $4, $5, $6, false, now()::date, 'Sent', 'Email', now(), now())`,
-            [donor.user_id || null, coll.camp_id || null, `Donation passed (collection ${collection_id})`, subject, text, recipientEmail]
-          );
-        } catch (mailErr) {
-          console.error('send mail failed (Passed):', mailErr);
-          await pool.query(
-            `INSERT INTO public.notifications (user_id, camp_id, message, subject, body, recipient_email, is_read, scheduled_at, status, channel, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, false, now()::date, 'Failed', 'Email', now())`,
-            [donor.user_id || null, coll.camp_id || null, `Donation passed (collection ${collection_id})`, subject, text, recipientEmail]
-          );
-        }
+        // store notification
+        await pool.query(
+          `INSERT INTO public.notifications (user_id, camp_id, message, subject, body, recipient_email, is_read, scheduled_at, status, channel, created_at, sent_at)
+           VALUES ($1, $2, $3, $4, $5, $6, false, now()::date, $7, 'Email', now(), $8)`,
+          [
+            donor.user_id || null, 
+            coll.camp_id || null, 
+            `Donation passed (collection ${collection_id})`, 
+            subject, 
+            text, 
+            recipientEmail,
+            emailResult.success ? 'Sent' : 'Failed',
+            emailResult.success ? 'now()' : null
+          ]
+        );
       } else {
         // no email: insert Pending notification
         await pool.query(
@@ -163,34 +176,42 @@ async function updateTesting(req, res) {
     } else {
       // Reactive case
       const reactiveTests = computed.reactive;
-      const subject = 'Life Link — Important: Your donation test result';
+      const subject = 'Life Link – Important: Your donation test result';
       const text = `Hello ${donor.donor_name || 'Donor'},\n\nOne or more screening tests for your donation (ID: ${collection_id}) on ${testedAtStr} returned reactive: ${reactiveTests.join(', ')}.\n\nPlease consult your healthcare provider for confirmatory testing.`;
       const html = `<!doctype html><html><body>
-        <h2>Donation Test — Action Required</h2>
+        <h2>Donation Test – Action Required</h2>
         <p>Hello ${donor.donor_name || 'Donor'},</p>
         <p>One or more screening tests for your donation (ID: <b>${collection_id}</b>) on <b>${testedAtStr}</b> returned reactive:</p>
         <ul>${reactiveTests.map(t => `<li>${t}</li>`).join('')}</ul>
         <p>Please consult your healthcare provider for confirmatory testing.</p>
         </body></html>`;
 
+      console.log('Sending reactive email to:', recipientEmail);
+      console.log('Subject:', subject);
+      console.log('Reactive tests:', reactiveTests);
+
       if (recipientEmail) {
-        try {
-          if (sendMail) await sendMail(recipientEmail, subject, text, html);
-          else await mailerAttach.sendMailWithAttachment(recipientEmail, subject, text, html, []);
-          await pool.query(
-            `INSERT INTO public.notifications (user_id, camp_id, message, subject, body, recipient_email, is_read, scheduled_at, status, channel, created_at, sent_at)
-             VALUES ($1, $2, $3, $4, $5, $6, false, now()::date, 'Sent', 'Email', now(), now())`,
-            [donor.user_id || null, coll.camp_id || null, `Donation reactive (collection ${collection_id})`, subject, text, recipientEmail]
-          );
-        } catch (err) {
-          console.error('send mail failed (Reactive):', err);
-          await pool.query(
-            `INSERT INTO public.notifications (user_id, camp_id, message, subject, body, recipient_email, is_read, scheduled_at, status, channel, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, false, now()::date, 'Failed', 'Email', now())`,
-            [donor.user_id || null, coll.camp_id || null, `Donation reactive (collection ${collection_id})`, subject, text, recipientEmail]
-          );
-        }
+        const emailResult = await sendEmailNotification(recipientEmail, subject, text, html, []);
+        
+        console.log('Email send result:', emailResult);
+
+        // store notification
+        await pool.query(
+          `INSERT INTO public.notifications (user_id, camp_id, message, subject, body, recipient_email, is_read, scheduled_at, status, channel, created_at, sent_at)
+           VALUES ($1, $2, $3, $4, $5, $6, false, now()::date, $7, 'Email', now(), $8)`,
+          [
+            donor.user_id || null, 
+            coll.camp_id || null, 
+            `Donation reactive (collection ${collection_id})`, 
+            subject, 
+            text, 
+            recipientEmail,
+            emailResult.success ? 'Sent' : 'Failed',
+            emailResult.success ? 'now()' : null
+          ]
+        );
       } else {
+        console.log('No recipient email found for reactive notification');
         await pool.query(
           `INSERT INTO public.notifications (user_id, camp_id, message, subject, body, is_read, scheduled_at, status, channel, created_at)
            VALUES ($1, $2, $3, $4, $5, false, now()::date, 'Pending', 'Email', now())`,
@@ -221,7 +242,7 @@ async function listTesting(req, res) {
     page = Math.max(1, parseInt(page, 10) || 1);
     limit = Math.min(200, Math.max(1, parseInt(limit, 10) || 25));
     const offset = (page - 1) * limit;
-    if (['Organizer', 'LabStaff'].includes(role)) centre_id = user.centre_id;
+    if (['Organizer', 'LabStaff','Admin'].includes(role)) centre_id = user.centreId;
 
     const where = [];
     const params = [];
@@ -280,7 +301,7 @@ async function getTesting(req, res) {
     const row = r.rows[0];
     const user = req.user || {};
     const role = user.role || 'Unknown';
-    if (['Organizer', 'LabStaff'].includes(role) && String(user.centre_id) !== String(row.centre_id)) {
+    if (['Organizer', 'LabStaff','Admin'].includes(role) && String(user.centreId) !== String(row.centre_id)) {
       return res.status(403).json({ message: 'Forbidden: you are not authorized for this centre' });
     }
     return res.json({ data: row });

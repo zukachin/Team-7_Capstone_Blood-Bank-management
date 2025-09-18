@@ -5,9 +5,19 @@ const pool = require('../db/db');
  * Helper: enforce location scope for non-admin roles
  */
 function enforceScope(role, userCentre, requestedCentre) {
-  if (['Admin', 'SuperAdmin'].includes(role)) return { allowed: true, centre: requestedCentre || null };
-  // Organizer / LabStaff forced to their centre
-  return { allowed: true, centre: userCentre };
+  console.log(`[enforceScope] role: ${role}, userCentre: ${userCentre}, requestedCentre: ${requestedCentre}`);
+  
+  // Only SuperAdmin can see all centres
+  if (role === 'SuperAdmin') {
+    const result = { allowed: true, centre: requestedCentre || null };
+    console.log(`[enforceScope] SuperAdmin result:`, result);
+    return result;
+  }
+  
+  // All other roles (Admin, Organizer, LabStaff) are scoped to their centre
+  const result = { allowed: true, centre: userCentre };
+  console.log(`[enforceScope] Scoped user result:`, result);
+  return result;
 }
 
 /**
@@ -23,10 +33,12 @@ async function listInventory(req, res) {
     limit = Math.min(500, parseInt(limit, 10) || 100);
     const offset = (page - 1) * limit;
 
-    // enforce scope
-    const scope = enforceScope(role, user.centre_id, centre_id);
+    // enforce scope - Fixed: use user.centreId instead of user.centre_id
+    console.log(`[listInventory] user:`, user);
+    const scope = enforceScope(role, user.centreId, centre_id);
     if (!scope.allowed) return res.status(403).json({ message: 'Forbidden' });
     centre_id = scope.centre;
+    console.log(`[listInventory] final centre_id after scope:`, centre_id);
 
     // build where clause
     const where = [];
@@ -91,8 +103,8 @@ async function getInventory(req, res) {
     if (!r.rowCount) return res.status(404).json({ message: 'Inventory not found' });
 
     const row = r.rows[0];
-    // scope check for non-admin
-    if (!['Admin', 'SuperAdmin'].includes(role) && String(user.centre_id) !== String(row.centre_id)) {
+    // scope check for non-SuperAdmin - Fixed: use user.centreId instead of user.centre_id
+    if (role !== 'SuperAdmin' && String(user.centreId) !== String(row.centre_id)) {
       return res.status(403).json({ message: 'Forbidden' });
     }
 
@@ -113,8 +125,13 @@ async function getInventorySummary(req, res) {
     const role = user.role || 'Unknown';
 
     let { centre_id = null, blood_group_id = null } = req.query;
-    // scope enforcement
-    if (['Organizer', 'LabStaff'].includes(role)) centre_id = user.centre_id;
+    
+    // Use the enforceScope helper consistently like other functions - Fixed: use user.centreId
+    console.log(`[getInventorySummary] user:`, user);
+    const scope = enforceScope(role, user.centreId, centre_id);
+    if (!scope.allowed) return res.status(403).json({ message: 'Forbidden' });
+    centre_id = scope.centre;
+    console.log(`[getInventorySummary] final centre_id after scope:`, centre_id);
 
     const where = [];
     const params = [];
@@ -175,7 +192,9 @@ async function getInventoryGlobal(req, res) {
   try {
     const user = req.user || {};
     const role = user.role || 'Unknown';
-    if (!['Admin', 'SuperAdmin'].includes(role)) {
+    
+    // Only SuperAdmin can access global summary
+    if (role !== 'SuperAdmin') {
       return res.status(403).json({ message: 'Forbidden' });
     }
 
@@ -237,7 +256,12 @@ async function getLowStock(req, res) {
     let { threshold = 1, centre_id = null } = req.query;
     threshold = Number(threshold || 1);
 
-    if (['Organizer', 'LabStaff'].includes(role)) centre_id = user.centre_id;
+    // Fixed: use user.centreId instead of user.centre_id
+    console.log(`[getLowStock] user role: ${role}, user.centreId: ${user.centreId}`);
+    if (role !== 'SuperAdmin') {
+      centre_id = user.centreId;
+      console.log(`[getLowStock] Non-SuperAdmin user, forcing centre_id to:`, centre_id);
+    }
 
     const where = [`bi.units_available <= $1`];
     const params = [threshold];
@@ -271,7 +295,13 @@ async function exportInventoryCSV(req, res) {
     const role = user.role || 'Unknown';
 
     let { centre_id = null, blood_group_id = null, component = null } = req.query;
-    if (['Organizer', 'LabStaff'].includes(role)) centre_id = user.centre_id;
+    
+    // Fixed: use user.centreId instead of user.centre_id
+    console.log(`[exportInventoryCSV] user role: ${role}, user.centreId: ${user.centreId}`);
+    if (role !== 'SuperAdmin') {
+      centre_id = user.centreId;
+      console.log(`[exportInventoryCSV] Non-SuperAdmin user, forcing centre_id to:`, centre_id);
+    }
 
     const where = [];
     const params = [];

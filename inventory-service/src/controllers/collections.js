@@ -1,12 +1,11 @@
 // src/controllers/collections.js
 const pool = require('../db/db');
-const mailerModule = require('../utils/mailer'); // your existing mailer (optional)
+const mailerModule = require('../utils/mailer'); // optional, keep as before
 const sendMail = (mailerModule && mailerModule.sendMail) ? mailerModule.sendMail : mailerModule;
 
 /**
  * POST /api/collections
  * body: { donor_id, centre_id, camp_id, bag_size, collected_amount, lot_number, collection_date, donor_reaction }
- * Location-bounded: Organizer/LabStaff must have req.user.centre_id === centre_id
  */
 async function createCollection(req, res) {
   const {
@@ -21,8 +20,9 @@ async function createCollection(req, res) {
   const user = req.user || {};
   const role = user.role || 'Unknown';
 
+  // If your app scopes users to a centre, enforce that here
   if (['Organizer', 'LabStaff'].includes(role)) {
-    if (!user.centre_id || String(user.centre_id) !== String(centre_id)) {
+    if (!user.centreId || String(user.centreId) !== String(centre_id)) {
       return res.status(403).json({ message: 'Forbidden: you are not authorized for this centre' });
     }
   }
@@ -39,7 +39,7 @@ async function createCollection(req, res) {
       return res.status(404).json({ message: 'Donor not found' });
     }
 
-    // verify centre exists (optional: add centres table)
+    // verify centre exists
     const centreCheck = await client.query('SELECT centre_id FROM public.centres WHERE centre_id = $1 LIMIT 1', [centre_id]);
     if (!centreCheck.rowCount) {
       await client.query('ROLLBACK');
@@ -62,15 +62,43 @@ async function createCollection(req, res) {
       INSERT INTO public.blood_collection
         (donor_id, centre_id, camp_id, bag_size, collected_amount, lot_number, collection_date, donor_reaction, created_at)
       VALUES ($1,$2,$3,$4,$5,$6, COALESCE($7, now()), $8, now())
-      RETURNING collection_id, donor_id, centre_id, camp_id, bag_size, collected_amount, lot_number, collection_date
+      RETURNING collection_id
     `;
     const vals = [donor_id, centre_id, camp_id, bag_size, collected_amount, lot_number, collection_date, donor_reaction];
-    const r = await client.query(insertSql, vals);
+    const insertR = await client.query(insertSql, vals);
+    const newCollectionId = insertR.rows[0].collection_id;
+
+    // Fetch enriched row (join donors and blood_groups and blood_testing) to return consistent shape
+    const enrichedQ = `
+      SELECT bc.collection_id,
+             bc.donor_id,
+             d.donor_name AS donor_name,
+             d.email AS donor_email,
+             d.mobile_no AS donor_mobile,
+             bg.group_name AS donor_blood_grp,
+             bc.centre_id,
+             bc.camp_id,
+             bc.bag_size,
+             bc.collected_amount,
+             bc.lot_number,
+             bc.collection_date,
+             bc.donor_reaction,
+             bt.test_id,
+             bt.overall_status,
+             bt.tested_at
+      FROM public.blood_collection bc
+      LEFT JOIN public.donors d ON d.donor_id = bc.donor_id
+      LEFT JOIN public.blood_groups bg ON bg.id = d.blood_group_id
+      LEFT JOIN public.blood_testing bt ON bt.collection_id = bc.collection_id
+      WHERE bc.collection_id = $1
+      LIMIT 1
+    `;
+    const enrichedR = await client.query(enrichedQ, [newCollectionId]);
 
     await client.query('COMMIT');
-    return res.status(201).json({ collection: r.rows[0] });
+    return res.status(201).json({ collection: enrichedR.rows[0] });
   } catch (err) {
-    try { await client.query('ROLLBACK'); } catch (e) {}
+    try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
     console.error('createCollection error', err);
     return res.status(500).json({ message: 'Server error', detail: err.message });
   } finally {
@@ -81,7 +109,6 @@ async function createCollection(req, res) {
 /**
  * GET /api/collections
  * Query: centre_id, camp_id, overall_status, from, to, page, limit
- * Organizer/LabStaff are scoped to req.user.centre_id
  */
 async function listCollections(req, res) {
   try {
@@ -93,7 +120,7 @@ async function listCollections(req, res) {
     limit = Math.min(200, Math.max(1, parseInt(limit, 10) || 25));
     const offset = (page - 1) * limit;
 
-    if (['Organizer', 'LabStaff'].includes(role)) centre_id = user.centre_id;
+    if (['Organizer', 'LabStaff','Admin'].includes(role)) centre_id = user.centreId;
 
     const where = [];
     const params = [];
@@ -115,11 +142,25 @@ async function listCollections(req, res) {
     const total = countR.rows[0].total;
 
     const dataSql = `
-      SELECT bc.collection_id, bc.donor_id, d.donor_name AS donor_name, d.email AS donor_email,
-             bc.centre_id, bc.camp_id, bc.bag_size, bc.collected_amount, bc.lot_number, bc.collection_date, bc.donor_reaction,
-             bt.test_id, bt.overall_status, bt.tested_at
+      SELECT bc.collection_id,
+             bc.donor_id,
+             d.donor_name AS donor_name,
+             d.email AS donor_email,
+             d.mobile_no AS donor_mobile,
+             bg.group_name AS donor_blood_grp,
+             bc.centre_id,
+             bc.camp_id,
+             bc.bag_size,
+             bc.collected_amount,
+             bc.lot_number,
+             bc.collection_date,
+             bc.donor_reaction,
+             bt.test_id,
+             bt.overall_status,
+             bt.tested_at
       FROM public.blood_collection bc
       LEFT JOIN public.donors d ON d.donor_id = bc.donor_id
+      LEFT JOIN public.blood_groups bg ON bg.id = d.blood_group_id
       LEFT JOIN public.blood_testing bt ON bt.collection_id = bc.collection_id
       ${whereSql}
       ORDER BY bc.collection_date DESC
@@ -145,11 +186,25 @@ async function getCollection(req, res) {
 
   try {
     const q = `
-      SELECT bc.collection_id, bc.donor_id, d.donor_name AS donor_name, d.email AS donor_email,
-             bc.centre_id, bc.camp_id, bc.bag_size, bc.collected_amount, bc.lot_number, bc.collection_date, bc.donor_reaction,
-             bt.test_id, bt.overall_status, bt.tested_at
+      SELECT bc.collection_id,
+             bc.donor_id,
+             d.donor_name AS donor_name,
+             d.email AS donor_email,
+             d.mobile_no AS donor_mobile,
+             bg.group_name AS donor_blood_grp,
+             bc.centre_id,
+             bc.camp_id,
+             bc.bag_size,
+             bc.collected_amount,
+             bc.lot_number,
+             bc.collection_date,
+             bc.donor_reaction,
+             bt.test_id,
+             bt.overall_status,
+             bt.tested_at
       FROM public.blood_collection bc
       LEFT JOIN public.donors d ON d.donor_id = bc.donor_id
+      LEFT JOIN public.blood_groups bg ON bg.id = d.blood_group_id
       LEFT JOIN public.blood_testing bt ON bt.collection_id = bc.collection_id
       WHERE bc.collection_id = $1
       LIMIT 1
@@ -158,7 +213,7 @@ async function getCollection(req, res) {
     if (!r.rowCount) return res.status(404).json({ message: 'Collection not found' });
 
     const row = r.rows[0];
-    if (['Organizer', 'LabStaff'].includes(role) && String(user.centre_id) !== String(row.centre_id)) {
+    if (['Organizer', 'LabStaff','Admin'].includes(role) && String(user.centreId) !== String(row.centre_id)) {
       return res.status(403).json({ message: 'Forbidden: you are not authorized for this centre' });
     }
 

@@ -233,37 +233,173 @@ exports.deleteCounseling = async (req, res) => {
     return res.status(500).json({ msg: "Error deleting counseling", error: err.message });
   }
 };
+// inside src/controllers/counselingController.js
+
 exports.getAllCounselings = async (req, res) => {
   try {
     const { role, centreId } = req.user || {};
-    const { centre_id, donor_id } = req.query;
+    const { centre_id, donor_id, camp_id, limit = 100, offset = 0 } = req.query;
 
-    let sql = `SELECT * FROM donor_counseling`;
+    // Input validation
+    const parsedLimit = Math.min(parseInt(limit) || 100, 1000); // Max 1000 records
+    const parsedOffset = Math.max(parseInt(offset) || 0, 0);
+    
+    let sql = `SELECT 
+      counseling_id,
+      donor_id,
+      centre_id,
+      camp_id,
+      counselling_date,
+      height,
+      weight,
+      hb_level,
+      previous_donation_date,
+      drunk_last_12hrs,
+      well_today,
+      under_medication,
+      fever_in_2_weeks,
+      recently_delivered,
+      pregnancy,
+      surgery,
+      disease_history,
+      status,
+      created_at,
+      updated_at
+    FROM donor_counseling`;
+    
     const params = [];
     const where = [];
 
+    // Role-based access control
     if (!isSuperAdmin(role)) {
+      if (!centreId) {
+        return res.status(403).json({ 
+          success: false,
+          msg: "Access denied: No centre assigned to user" 
+        });
+      }
       where.push(`centre_id = $${params.length + 1}`);
       params.push(centreId);
     } else {
-      if (centre_id) {
-        where.push(`centre_id = $${params.length + 1}`);
-        params.push(centre_id);
+      // SuperAdmin can optionally filter by centre
+      if (centre_id && centre_id.trim()) {
+        const parsedCentreId = parseInt(centre_id);
+        if (!isNaN(parsedCentreId)) {
+          where.push(`centre_id = $${params.length + 1}`);
+          params.push(parsedCentreId);
+        }
       }
     }
 
-    if (donor_id) {
-      where.push(`donor_id = $${params.length + 1}`);
-      params.push(donor_id);
+    // Donor ID filter
+    if (donor_id && donor_id.trim()) {
+      const parsedDonorId = parseInt(donor_id);
+      if (!isNaN(parsedDonorId)) {
+        where.push(`donor_id = $${params.length + 1}`);
+        params.push(parsedDonorId);
+      } else {
+        return res.status(400).json({
+          success: false,
+          msg: "Invalid donor_id format. Must be a number."
+        });
+      }
     }
 
-    if (where.length) sql += ` WHERE ${where.join(" AND ")}`;
-    sql += ` ORDER BY counseling_date DESC LIMIT 100`;
+    // Camp ID filter
+    if (camp_id && camp_id.trim()) {
+      const parsedCampId = parseInt(camp_id);
+      if (!isNaN(parsedCampId)) {
+        where.push(`camp_id = $${params.length + 1}`);
+        params.push(parsedCampId);
+      } else {
+        return res.status(400).json({
+          success: false,
+          msg: "Invalid camp_id format. Must be a number."
+        });
+      }
+    }
 
+    // Build final query
+    if (where.length) {
+      sql += ` WHERE ${where.join(" AND ")}`;
+    }
+    
+    sql += ` ORDER BY counselling_date DESC, counseling_id DESC`;
+    sql += ` LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+    params.push(parsedLimit, parsedOffset);
+
+    // Execute query
     const result = await pool.query(sql, params);
-    return res.json({ counseling: result.rows });
+
+    // Get total count for pagination (optional)
+    let totalCount = 0;
+    if (result.rows.length > 0) {
+      let countSql = `SELECT COUNT(*) as total FROM donor_counseling`;
+      if (where.length) {
+        countSql += ` WHERE ${where.join(" AND ")}`;
+      }
+      const countResult = await pool.query(countSql, params.slice(0, -2)); // Remove limit/offset params
+      totalCount = parseInt(countResult.rows[0]?.total || 0);
+    }
+
+    // Format response
+    const counselings = result.rows.map(row => ({
+      ...row,
+      // Ensure boolean fields are properly formatted
+      drunk_last_12hrs: !!row.drunk_last_12hrs,
+      well_today: !!row.well_today,
+      under_medication: !!row.under_medication,
+      fever_in_2_weeks: !!row.fever_in_2_weeks,
+      recently_delivered: !!row.recently_delivered,
+      pregnancy: !!row.pregnancy,
+      surgery: !!row.surgery,
+      // Format dates
+      counselling_date: row.counselling_date ? new Date(row.counselling_date).toISOString() : null,
+      previous_donation_date: row.previous_donation_date ? new Date(row.previous_donation_date).toISOString() : null,
+      created_at: row.created_at ? new Date(row.created_at).toISOString() : null,
+      updated_at: row.updated_at ? new Date(row.updated_at).toISOString() : null
+    }));
+
+    return res.status(200).json({
+      success: true,
+      counseling: counselings,
+      pagination: {
+        total: totalCount,
+        limit: parsedLimit,
+        offset: parsedOffset,
+        hasMore: totalCount > (parsedOffset + parsedLimit)
+      },
+      filters: {
+        centre_id: centre_id || (isSuperAdmin(role) ? null : centreId),
+        donor_id: donor_id || null,
+        camp_id: camp_id || null
+      }
+    });
+
   } catch (err) {
     console.error("Error in getAllCounselings:", err);
-    return res.status(500).json({ msg: "Error fetching counseling records", error: err.message });
+    
+    // Return appropriate error based on error type
+    if (err.code === '22P02') { // PostgreSQL invalid text representation
+      return res.status(400).json({ 
+        success: false,
+        msg: "Invalid parameter format", 
+        error: err.message 
+      });
+    }
+    
+    if (err.code === '42703') { // PostgreSQL undefined column
+      return res.status(500).json({ 
+        success: false,
+        msg: "Database schema error", 
+        error: "Invalid column reference" 
+      });
+    }
+
+    return res.status(500).json({ 
+      success: false,
+      msg: "Error fetching counseling records", 
+      error: process.env.NODE_ENV === 'development' ? err.message : "Internal server error"
+    });
   }
 };

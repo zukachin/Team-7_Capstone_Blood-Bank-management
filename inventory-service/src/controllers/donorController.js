@@ -3,6 +3,9 @@ const pool = require("../db/db");
 const { donorSchema, donorUpdateSchema } = require("../validators/donorValidator");
 const { sendInviteEmail } = require("../utils/mailer");
 
+const crypto = require("crypto");
+const bcrypt = require("bcrypt");
+
 /** Helper: is SuperAdmin */
 const isSuperAdmin = (role) => role && role.toUpperCase() === "SUPER_ADMIN";
 

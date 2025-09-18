@@ -3,7 +3,7 @@ import { api } from "../../lib/api";
 
 export default function AdminAppointments() {
   const [appointments, setAppointments] = useState([]);
-  const [updatingId, setUpdatingId] = useState(null); // loading state
+  const [updatingId, setUpdatingId] = useState(null);
 
   const allowedStatusActions = ["Pending", "Approved", "Rejected"];
 
@@ -21,43 +21,41 @@ export default function AdminAppointments() {
   };
 
   const handleStatusChange = async (id, status) => {
-  try {
-    setUpdatingId(id);
+    try {
+      setUpdatingId(id);
 
-    let response;
-    if (status === "Approved") {
-      response = await api.updateAppointmentStatus(id, { action: "approve" });
-    } else if (status === "Rejected") {
-      const reason = prompt("Please enter a rejection reason (optional):", "");
-      response = await api.updateAppointmentStatus(id, { action: "reject", rejection_reason: reason || null });
-    } else {
-      console.warn("Unsupported status change:", status);
-      return;
+      let response;
+      if (status === "Approved") {
+        response = await api.updateAppointmentStatus(id, { action: "approve" });
+      } else if (status === "Rejected") {
+        const reason = prompt("Please enter a rejection reason (optional):", "");
+        response = await api.updateAppointmentStatus(id, { action: "reject", rejection_reason: reason || null });
+      } else {
+        console.warn("Unsupported status change:", status);
+        return;
+      }
+
+      setAppointments((prev) =>
+        prev.map((a) =>
+          a.appointment_id === id
+            ? {
+                ...a,
+                status,
+                token_no: status === "Approved" ? response?.token_no || a.token_no : null,
+                rejection_reason: status === "Rejected" ? response?.rejection_reason || null : null,
+                approved_at: status === "Approved" ? new Date().toISOString() : null,
+                approved_by: status === "Approved" ? "You" : null,
+                updated_at: new Date().toISOString(),
+              }
+            : a
+        )
+      );
+    } catch (err) {
+      console.error("Error updating status:", err);
+    } finally {
+      setUpdatingId(null);
     }
-
-    // Update status in local state
-    setAppointments((prev) =>
-      prev.map((a) =>
-        a.appointment_id === id
-          ? {
-              ...a,
-              status,
-              token_no: status === "Approved" ? response?.token_no || a.token_no : null,
-              rejection_reason: status === "Rejected" ? response?.rejection_reason || reason : null,
-              approved_at: new Date().toISOString(),
-              approved_by: a.approved_by || "You", // Update based on your auth logic
-              updated_at: new Date().toISOString(),
-            }
-          : a
-      )
-    );
-  } catch (err) {
-    console.error("Error updating status:", err);
-  } finally {
-    setUpdatingId(null);
-  }
-};
-
+  };
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this appointment?")) return;
@@ -71,97 +69,79 @@ export default function AdminAppointments() {
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "-";
-    return new Date(dateStr).toLocaleString(); // Format like: 9/18/2025, 10:30:00 AM
+    return new Date(dateStr).toLocaleString();
   };
 
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold text-red-600 mb-6">Appointment Schedules</h1>
 
-      <div className="bg-gradient-to-br from-gray-900 to-black text-white rounded-2xl shadow-xl p-6 overflow-x-auto">
-        <table className="w-full border-collapse text-sm">
-          <thead>
-            <tr className="bg-gray-900 text-gray-200">
-              <th className="p-4 border">ID</th>
-              <th className="p-4 border">User ID</th>
-              <th className="p-4 border">District ID</th>
-              <th className="p-4 border">Center ID</th>
-              <th className="p-4 border">Date</th>
-              <th className="p-4 border">Time</th>
-              <th className="p-4 border">Weight</th>
-              <th className="p-4 border">Medication</th>
-              <th className="p-4 border">Last Donation</th>
-              <th className="p-4 border">Status</th>
-              <th className="p-4 border">Token No</th>
-              <th className="p-4 border">Rejection Reason</th>
-              <th className="p-4 border">Created At</th>
-              <th className="p-4 border">Updated At</th>
-              <th className="p-4 border">Approved By</th>
-              <th className="p-4 border">Approved At</th>
-              <th className="p-4 border">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {appointments.length > 0 ? (
-              appointments.map((a) => (
-                <tr key={a.appointment_id} className="hover:bg-gray-800">
-                  <td className="p-4 border">{a.appointment_id}</td>
-                  <td className="p-4 border">{a.user_id}</td>
-                  <td className="p-4 border">{a.district_id}</td>
-                  <td className="p-4 border">{a.centre_id}</td>
-                  <td className="p-4 border">{a.appointment_date}</td>
-                  <td className="p-4 border">{a.appointment_time}</td>
-                  <td className="p-4 border">{a.weight}</td>
-                  <td className="p-4 border">{a.under_medication ? "Yes" : "No"}</td>
-                  <td className="p-4 border">{a.last_donation_date || "-"}</td>
-                  <td className="p-4 border">
-                    <select
-                      value={a.status}
-                      disabled={
-                        updatingId === a.appointment_id ||
-                        a.status === "Approved" ||
-                        a.status === "Rejected"
-                      }
-                      onChange={(e) =>
-                        handleStatusChange(a.appointment_id, e.target.value)
-                      }
-                      className="bg-gray-800 text-white rounded p-1 w-full"
-                    >
-                      {allowedStatusActions.map((opt) => (
-                        <option key={opt} value={opt}>
-                          {updatingId === a.appointment_id && opt === a.status
-                            ? "Updating..."
-                            : opt}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="p-4 border">{a.token_no || "-"}</td>
-                  <td className="p-4 border">{a.rejection_reason || "-"}</td>
-                  <td className="p-4 border">{formatDate(a.created_at)}</td>
-                  <td className="p-4 border">{formatDate(a.updated_at)}</td>
-                  <td className="p-4 border">{a.approved_by || "-"}</td>
-                  <td className="p-4 border">{formatDate(a.approved_at)}</td>
-                  <td className="p-4 border">
-                    <button
-                      className="px-2 py-1 bg-red-600 hover:bg-red-700 rounded"
-                      onClick={() => handleDelete(a.appointment_id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="17" className="p-3 text-center text-gray-500">
-                  No appointments available.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      {appointments.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {appointments.map((a) => (
+            <div key={a.appointment_id} className="bg-gradient-to-br from-gray-900 to-black text-white p-4 rounded-2xl shadow hover:shadow-lg">
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="font-bold text-lg">Appointment #{a.appointment_id}</h2>
+                <span
+                  className={`px-2 py-1 rounded-full text-sm ${
+                    a.status === "Approved"
+                      ? "bg-green-600"
+                      : a.status === "Rejected"
+                      ? "bg-red-600"
+                      : "bg-yellow-600"
+                  }`}
+                >
+                  {a.status}
+                </span>
+              </div>
+
+              <p><strong>User:</strong> {a.user_id}</p>
+              <p><strong>Center:</strong> {a.centre_id} ({a.district_id})</p>
+              <p><strong>Date & Time:</strong> {a.appointment_date} | {a.appointment_time}</p>
+              <p><strong>Weight:</strong> {a.weight} kg </p>
+              <p><strong>Medication:</strong> {a.under_medication ? "Yes" : "No"}</p>
+              <p><strong>Last Donation:</strong> {a.last_donation_date || "-"}</p>
+
+              <div className="mt-3 flex flex-col gap-2">
+                <select
+                  value={a.status}
+                  disabled={
+                    updatingId === a.appointment_id ||
+                    a.status === "Approved" ||
+                    a.status === "Rejected"
+                  }
+                  onChange={(e) => handleStatusChange(a.appointment_id, e.target.value)}
+                  className="bg-gray-800 text-white rounded p-1 w-full"
+                >
+                  {allowedStatusActions.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {updatingId === a.appointment_id && opt === a.status ? "Updating..." : opt}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded"
+                  onClick={() => handleDelete(a.appointment_id)}
+                >
+                  Delete
+                </button>
+              </div>
+
+              <div className="mt-2 text-sm text-gray-400">
+                <p><strong>Token No:</strong> {a.token_no || "-"}</p>
+                <p><strong>Rejection Reason:</strong> {a.rejection_reason || "-"}</p>
+                <p><strong>Created At:</strong> {formatDate(a.created_at)}</p>
+                <p><strong>Updated At:</strong> {formatDate(a.updated_at)}</p>
+                <p><strong>Approved By:</strong> {a.approved_by || "-"}</p>
+                <p><strong>Approved At:</strong> {formatDate(a.approved_at)}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-center text-gray-500">No appointments available.</p>
+      )}
     </div>
   );
 }

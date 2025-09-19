@@ -1,0 +1,39 @@
+{
+	"info": {
+		"_postman_id": "4fe2c5dc-a8a9-4791-8c8f-d6df35cd0789",
+		"name": "chat-agent",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "47666476",
+		"_collection_link": "https://swethath-a62bbf1b-5781867.postman.co/workspace/swetha-thangaraj's-Workspace~8e615fe7-e7b8-45e4-8c71-2b036f1e1fc9/collection/47666476-4fe2c5dc-a8a9-4791-8c8f-d6df35cd0789?action=share&source=collection_link&creator=47666476"
+	},
+	"item": [
+		{
+			"name": "ask-agent",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"thread_id\":\"123456\",\r\n    \"query\": \"What's the weather like in New York?\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/chat",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"chat"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

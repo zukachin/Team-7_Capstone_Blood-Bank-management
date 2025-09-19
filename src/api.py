@@ -19,7 +19,7 @@ app.add_middleware(
     allow_headers=["*"],      # <--- allow all headers
 )
 # Define the POST endpoint
-@app.post("/chat", response_model=ChatResponse)
+@app.post("/api/chat", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
     """Handle chat query via agent."""
     reply = agent.ask(query=request.query, thread_id=request.thread_id)

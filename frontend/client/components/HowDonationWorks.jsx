@@ -67,7 +67,7 @@ export function HowDonationWorks() {
 
   const eligibilityCriteria = [
     { title: "Age", value: "17-75 years old", icon: "🎂" },
-    { title: "Weight", value: "At least 110 lbs", icon: "⚖️" },
+    { title: "Weight", value: "At least above 45 kg", icon: "⚖️" },
     { title: "Health", value: "Generally good health", icon: "💪" },
     { title: "Frequency", value: "Every 56 days", icon: "📅" }
   ];
